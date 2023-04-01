@@ -1,5 +1,6 @@
 ---
 # Launch unit test suite with bash
+# yamllint disable rule:line-length
 
 name: Unit
 
@@ -19,7 +20,33 @@ jobs:
         uses: actions/checkout@v3
 
 
-      - name: Run unit
+      - name: Run Unit
         run: |
+          # Install bash on mac
+          # From: https://stackoverflow.com/questions/69211983
+          if [[ "$MATRIX_OS" == 'macos-latest' ]]; then
+            echo "\n\n==> Instaling Bash"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            brew update
+
+            brew install bash
+            brew install gnu-sed
+
+            echo "/usr/local/bin" >> $GITHUB_PATH
+            echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
+          fi
+
+          echo "\n\n==> Bash Version"
           bash --version
-          bash ./dispatch util unit_test
+
+          echo "\n\n==> Environment"
+          env
+
+          echo "\n\n==> Hi"
+          ./script/lib_dispatch.sh hi
+
+          echo "\n\n==> Unit"
+          ./dispatch util unit_test
+        env:
+          MATRIX_OS: ${{ matrix.os }}
+        shell: bash

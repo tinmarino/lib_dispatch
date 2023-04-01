@@ -15,8 +15,32 @@ start_test_function(){
 
 
 mkdir -p /tmp/ART
-g_tmp_root=$(mktemp --directory "/tmp/ART/XXXXXXX")
+g_tmp_root=$(mktemp -d "/tmp/ART/XXXXXXX")
 mkdir -p "$g_tmp_root"
+
+
+system_timeout(){
+  : 'Mac do not have the timeout command
+    To use on GITHUB_ACTION
+    Ref: https://stackoverflow.com/questions/3504945/timeout-command-on-mac-os-x
+    Returns:
+      - Function result if no timeout
+      - 137 if timedout
+  '
+  # TODO add a gret_os function
+  if [[ -v MATRIX_OS && "$MATRIX_OS" == macos-latest ]]; then
+    perl -e 'alarm shift; exec @ARGV' "$@";
+    res=$?
+
+    # This is returning 124 is timedout but I want 137 = 128 + killed
+    (( res == 124 )) && (( res = 137 ))
+
+    return "$res"
+  fi
+
+  command timeout "$@"
+}
+
 
 
 art_parallel_suite(){

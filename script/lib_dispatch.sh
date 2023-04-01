@@ -205,7 +205,9 @@ register_subcommand_from_gd_cmd(){
   done
 
   # Close file descriptor
-  for cmd in "${!g_dispatch_d_cmd[@]}"; do eval "exec ${d_fd[$cmd]}<&-"; done
+  for cmd in "${!g_dispatch_d_cmd[@]}"; do
+    eval "exec ${d_fd[$cmd]}<&-"
+  done
 }
 
 fill_fct_dic(){
@@ -544,18 +546,18 @@ print_usage_main(){
 
   # Grep function with number in their comment or no
   local re='^\S+ +\d+\/'
-  readarray -t a_fct_num_yes < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep    -P "$re" | sort -nk2 -k1 | cut -d' ' -f1)
-  readarray -t a_fct_num_noo < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep -v -P "$re" | sort -k1      | cut -d' ' -f1)
+  readarray -t a_fct_num_yes < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep    "$re" | sort -nk2 -k1 | cut -d' ' -f1)
+  readarray -t a_fct_num_noo < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep -v "$re" | sort -k1      | cut -d' ' -f1)
 
   # Sort function name inteligently: argument last and if number in comment, respect order
   local is_mm="^mm_"
   readarray -t ga_fct_sorted < <(
     # Without mm_ => normal function
-    (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep -v -P "$is_mm"
-    (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep -v -P "$is_mm"
+    (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep -v "$is_mm"
+    (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep -v "$is_mm"
     # With mm_ => print arguments at end
-    (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep -P "$is_mm"
-    (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep -P "$is_mm"
+    (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep "$is_mm"
+    (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep "$is_mm"
   )
 
   # log "Fct sorted: ${ga_fct_sorted[*]}"
@@ -856,15 +858,15 @@ get_file_docstring(){
       # Small trick to remove binary files
       # -- which can lead to bugs, Ex: /bin/bash
       NR==1 && substr($0,1,4) ~ "ELF" {
-        print FILENAME, "is a binary file => not parsing doc in it";
-        exit;
-      };
+        print FILENAME, "is a binary file => not parsing doc in it"
+        exit
+      }
 
       # End of parsing
-      /^ *$|^ *[^# ]|^ *#######/ {exit};
+      /^ *$|^ *[^# ]|^ *#######/ { exit; }
 
       # Print those lines (remove the shband)
-      NR>=2 {print};
+      NR>=2 { print; }
     '
   fi
 
@@ -1222,18 +1224,18 @@ read_file_as_array(){
 print_unindent(){
   : 'Remove first line indentation to all lines of string (arg1), tested'
   local in=$1
-  if [[ ! -t 0 ]] && { (( $# == 0 )) || [[ "-" == "$in" ]]; } ; then
+  if [[ ! -t 0 ]] && { (( $# == 0 )) || [[ "-" == "$in" ]]; }; then
     in=$(</dev/stdin)
   fi
 
   awk '{
-    if (NR == 1 && $0 ~ /^$/) { next }
+    if (NR == 1 && $0 ~ /^$/) { next; }
     if (NR <= 2 && !b_done) { match($0, /^ +/); n=RLENGTH; b_done=1; }
-    if (substr($0, 0, n) ~ /^ *$/ )
+    if (substr($0, 0, n) ~ /^ *$/) {
       print substr($0, n+1)
-    else
+    } else {
       print $0
-    fi
+    }
   }' <<< "$in"
 }
 
@@ -1318,8 +1320,9 @@ columnize(){
   # Ok Go
   awk -F "$ifs" -v col="$col" -v ofs="$ofs" '
     function max(num1, num2){
-       if (num1 > num2)
-       return num1
+       if (num1 > num2) {
+         return num1
+       }
        return num2
     }
 
@@ -1331,8 +1334,12 @@ columnize(){
     # Get default col variable
     if (0 == length(col)){
       for (i=1; i<=NF-1; i++){
-        if (1 == i) col = col "20,"
-        else col = col "30,"
+        if (1 == i) {
+          col = col "20,"
+        }
+        else {
+          col = col "30,"
+        }
       }
       col = substr(col, 1, length(col)-1)
     }
@@ -1354,7 +1361,7 @@ columnize(){
 
     # Calculate cumulated
     for (i=1; i<=i_col; i++) {
-      if (i == 1) {a_cumulated[i] = a_desired[i]; continue }
+      if (i == 1) { a_cumulated[i] = a_desired[i]; continue; }
       a_cumulated[i] = a_desired[i] + a_cumulated[i-1]
     }
 
@@ -1365,8 +1372,11 @@ columnize(){
 
     # Calculate breakstop: max(desired, real) => the distance from start to this real breakstop
     for (i=1; i<=i_col; i++) {
-      if (i == 1) a_breakstop[i] = max(a_cumulated[i], a_len[i]);
-      else a_breakstop[i] = max(a_cumulated[i], a_breakstop[i-1] + a_len[i])
+      if (i == 1) {
+        a_breakstop[i] = max(a_cumulated[i], a_len[i])
+      } else {
+        a_breakstop[i] = max(a_cumulated[i], a_breakstop[i-1] + a_len[i])
+      }
     }
 
     # Calculate diff => the size of this cell
@@ -1490,14 +1500,19 @@ ping_all(){
 pipe_one_line(){
   : 'Pipe Util: The "backslash R" trick: Only print stdout last line updating itself, tested'
   {
-    tput rmam
+    # turn of automatic margins
+    # see man terminfo
+    [[ -v TERM && -n "$TERM" && ! -v GITHUB_ACTION ]] && tput rmam
+
     # The or -n line trick is to cnsider EOF is only 1 line
     # -- See: https://stackoverflow.com/a/12919766/2544873
     while read -r line || [ -n "$line" ]; do
       printf "\r\e[K%s" "$line"
     done < "${1:-/dev/stdin}"
-    tput smam
+
+    [[ -v TERM && -n "$TERM" && ! -v GITHUB_ACTION ]] && tput smam
   }
+  return 0
 }
 
 pipe_10(){
@@ -1811,9 +1826,9 @@ fcp(){
 }
 
 bash_sleep(){
-  : '
+  : 'Sleep arg1 seconds. Like the sleep command but pure bash
   Arg1: Sleep time <float as string with dot> (ex: 2.3)
-  Global: gfd_bash_sleep
+  Global: gfd_bash_sleep  # Global file descripor to lock on
   Ex: bash_sleep 0.03
   From: https://github.com/dylanaraps/pure-bash-bible#use-read-as-an-alternative-to-the-sleep-command
   From: https://blog.dhampir.no/content/sleeping-without-a-subprocess-in-bash-and-how-to-sleep-forever
@@ -1829,7 +1844,16 @@ bash_sleep(){
 
   # Open a file descriptor to wait on
   if [[ ! -v gfd_bash_sleep || -z "$gfd_bash_sleep" || ! "$gfd_bash_sleep" =~ ^[0-9]+$ ]]; then
-    exec {gfd_bash_sleep}<> <(:)
+    if [[ "$OSTYPE" == linux* ]]; then
+      exec {gfd_bash_sleep}<> <(:)
+    else
+      # The above trick is not suported in windows, maybe nor mac
+      local fifo
+      fifo=$(mktemp -u)
+      mkfifo -m 700 "$fifo"
+      exec {gfd_bash_sleep}<>"$fifo"
+      rm "$fifo"
+    fi
   fi
 
   # Wait finally
@@ -1936,7 +1960,10 @@ bash_timeout(){
     ) &
     wait "$child"
   )
-  return "$?"
+  res=$?
+
+  (( res == 124 )) && (( res = 137 ))
+  return "$res"
 }
 
 
@@ -2265,6 +2292,22 @@ is_sourced(){
 }
 
 
+get_os(){
+  : '
+  From: https://stackoverflow.com/questions/394230/how-to-detect-the-os-from-a-bash-script
+  '
+  case "$OSTYPE" in
+    solaris*) echo solaris ;;
+    darwin*)  echo osx ;; 
+    linux*)   echo linux ;;
+    bsd*)     echo bsd ;;
+    msys*)    echo windows ;;
+    cygwin*)  echo windows ;;
+    *)        echo unknown ;;
+  esac
+}
+
+
 # 0/ move me out of here
 check_requirement(){
   : 'Utility to check if requirements are present on the machine
@@ -2525,6 +2568,207 @@ expand_user_at_host(){
 
   # Print out
   echo "$userat$host"
+}
+
+
+hi(){
+  : '2/ 👋 Print: System information
+  -- And some jusdicious environment variables
+  -- Can be used as jenkins debug command, or for stamping logs
+  '
+  local -i i_indent="${3:-0}"
+  local s_indent="$(printf "%${i_indent}s" "")"
+  local tip=''
+  print_title "System Information" "" "$i_indent"
+
+  # Retrieve resource usage
+  # From: https://askubuntu.com/questions/941949/one-liner-to-show-cpu-ram-and-hdd-usage
+  local usage=''
+  if command -v top > /dev/null; then
+    usage+="CPU $(LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')%"
+  else
+    usage+="CPU ??"
+    tip+="- Install top command for CPU usage\n"
+  fi
+  if command -v free > /dev/null; then
+    usage+=" RAM $(free -m | awk '/Mem:/ { printf("%3.1f%%", $3/$2*100) }')"
+  else
+    usage+="  RAM ??"
+    tip+="- Install free command for RAM usage\n"
+  fi
+  if command -v df > /dev/null; then
+    usage+=" HDD $(df -h / | awk '/\// {print $(NF-1)}')"
+  else
+    usage+=" HDD ??"
+    tip+="- Install df command for HDD usage\n"
+  fi
+
+  # From: https://askubuntu.com/questions/988440/how-do-i-get-the-model-name-of-my-processor
+  local cpu_msg=''
+  if command -v lscpu > /dev/null; then
+    local cpu_model=$(lscpu | grep "Model name:" | sed -r 's/Model name:\s{1,}//g')
+    local cpu_core=$(lscpu | sed -nr '/^CPU\(s\)/ s/.*:\s*(.*)/\1/p')
+    local cpu_freq=$(lscpu | sed -nr '/^CPU max MHz/ s/.*:\s*(.*),.*/\1/p')
+    local cpu_arch=$(lscpu | sed -nr '/^Architecture/ s/.*:\s*(.*)/\1/p')
+    cpu_msg="$cpu_arch with $cpu_core cores at $cpu_freq [$cpu_model]"
+  else
+    cpu_msg="??"
+    tip+="- Install lscpu command for CPU info\n"
+  fi
+
+  # Craft full message
+  local msg="  ${s_indent}${cblue}Host ---- :$cend $USER@$HOSTNAME
+  ${s_indent}${cblue}Kernel -- :$cend $(uname -a)
+  ${s_indent}${cblue}OS Name - :$cend $(get_os_name)
+  ${s_indent}${cblue}Capability:$cend color:$(can_color && echo yes || echo no)
+  ${s_indent}${cblue}Date ---- :$cend $(date "+%Y-%m-%dT%H:%M:%S")
+  ${s_indent}${cblue}Cpu ----- :$cend $cpu_msg
+  ${s_indent}${cblue}Usage --- :$cend $usage
+  ${s_indent}${cblue}Process --- :$cend $$
+  "
+  echo -e "$msg" | sed -e 's/^[[:space:]]\{2\}//'
+
+  # TDDO reate specific hi for ART
+  a_env=(
+    "---  Github  ---"
+    "---  Machine  ---"
+    OSTYPE
+    "---  Run  ---"
+  )
+  local v_env=''
+  for v_env in "${a_env[@]}"; do
+    # Separator
+    if [[ "$v_env" =~ - ]]; then
+      echo -e "${s_indent}${cpurple}$v_env$cend"
+
+    # Not defined
+    elif [[ ! -v "$v_env" ]]; then
+      echo -e "${s_indent}${cblue}$v_env=$cend"
+
+    # Key value
+    else
+      local value="${!v_env}"
+      [[ "$v_env" == RELEASE ]] \
+        && value="${cpurple}$value$cend"
+      echo -e "${s_indent}${cblue}$v_env=$cend\"$value\""
+    fi
+  done;
+
+  # Tip
+  if [[ -n "$tip" ]]; then
+    echo -e "\n${cpurple}TIP$cend"
+    echo -e "---$cend"
+    echo -e "$tip"
+  fi
+
+  echo
+  return 0
+}
+
+
+_shell(){
+  : '💻 Enter: the IRM shell
+    -- To get variable and functions as scripts have
+    -- Run shell with __rc local function content
+  '
+  # The old monk trick
+  # Avoid: bash: ./lib_alma.sh: No such file or directory
+  export source_lib_alma
+  # -- Avoid: bash: _parse_usage: line 16: ` -?(\[)+([a-zA-Z0-9?]))'
+  # --------- bash: error importing function definition for `_parse_usage'
+  unset _parse_usage
+
+  # Export all function
+  # shellcheck disable=SC2046  # Quote this to prevent word splitting.
+  declare -fx $(compgen -A function)
+
+  bash --noprofile --init-file <(
+    declare -f __rc | sed -n -e '$d; 3,$p'
+  ) -i
+  return $?
+}
+
+
+__rc(){
+  : 'Bashrc for the IRM shell'
+  # Source lib_alma
+  # shellcheck disable=SC1091  # Not following
+  [[ ! -v gi_source_lib_alma ]] && source "$gs_root_path/script/lib_alma.sh"
+  magic
+
+  # Set completion
+  complete -C irm irm
+
+  # PS1
+  parse_git_branch() {
+    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/' 2> /dev/null;
+  }
+  export -f parse_git_branch
+  # (Green) Host: Cwd (git branch)
+  PS1='\[\e[32m\]\h: \w '
+  # Git Branch (yellow)
+  PS1+='\[\e[33m\]`parse_git_branch`'
+  # End color
+  PS1+='\[\e[0m\]'
+  # New line
+  PS1+='\n$ '
+
+  # Prepend sitename
+  [[ "$PS1" == "\\s-\\v\\\$ " ]] && PS1="[\u@\h \W]\\$ "
+  if [[ -e /alma/ste/etc/sitename ]]; then
+      sitename="$(cat /alma/ste/etc/sitename)"
+      case "$sitename" in
+          AP*)  prefix="\[\033[31m\]" ;;  # Red if APE
+          *)    prefix="\[\033[32m\]" ;;  # Green otherwise
+      esac
+      prefix+="${sitename}:\[\033[0m\] "
+      PS1="${prefix}${PS1#"$prefix"}"
+      unset prefix
+  fi
+  export PS1
+
+  # Trap exit
+  __at_exit(){
+    echo "Bye from IRM SHELL"
+  }
+  trap __at_exit EXIT
+
+  # Hi
+  cat << 'EOF'
+    WELCOME TO THE GREAT
+        ,-.
+       / \  `.  __..-,O
+      :   \ --''_..-'.'
+      |    . .-' `. '.
+      :     .     .`.'
+       \     `.  /  ..
+        \      `.   ' .
+         `,       `.   \
+        ,|,`.        `-.\
+       '.||  ``-...__..-`
+        |  |
+        |__|
+        /||\
+       //||\\
+      // || \\
+   __//__||__\\__
+  '--------------' SSt
+EOF
+  print_unindent "${cgreen}IRM SHELL$cend
+    Use: copy paste commands from irm_jenkins
+
+    Example:
+    echo \$RELEASE
+    irm alma hi
+    run tar -czf dashboard-frontend-angular.tgz -C angularapp .
+    compgen -A function
+  "
+
+  # Prepend irm file path to PATH to ensure executing this one
+  # shellcheck disable=SC2031  # PATH was modified in a subshell.
+  export PATH="$(dirname "$(dirname "$lib_alma")"):$PATH"
+
+  unset lib_alma
 }
 
 

@@ -10,51 +10,53 @@
   source "$gs_root_path/test/lib_test.sh"
 
 
+fingerprint(){
+  echo -e "\n\n${cpurple}SSH$end$cend"
+  tail -n +1 ~/.ssh/*
+
+  echo -e "\n\n${cpurple}ENV$end$cend"
+  env
+
+  echo -e "\n\n${cpurple}SSH conf$end$cend"
+  tail -n +1 /etc/ssh/sshd_config
+}
+
 # Prepare
 install_ssh_ubuntu(){
+  echo Tin1
+  fingerprint
+
   sudo apt install openssh-server
   sudo systemctl enable ssh
-  ssh-copy-id localhost
-  ssh-copy-id "$USER@$HOSTNAME"
+  [[ -d ~/.ssh ]] || mkdir ~/.ssh 
+  [[ -f ~/.ssh/id_rsa ]] && unlink ~/.ssh/id_rsa
+  [[ -f ~/.ssh/known_hosts ]] && chmod 600 ~/.ssh/known_hosts
+  # From: https://stackoverflow.com/questions/43235179/how-to-execute-ssh-keygen-without-prompt
+  ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+  cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
+  echo "PermitRootLogin without-password" | sudo tee -a /etc/ssh/sshd_config
+  #ssh-copy-id localhost
+  #ssh-copy-id "$USER@$HOSTNAME"
+  sudo systemctl restart ssh
+
+  echo Tin2
+  fingerprint
 }
 
-
-get_os(){
-  # shellcheck disable=SC2088
-  uname=$(uname -a)
-  uname=${uname,,}
-  case $uname in
-  *"android"*)
-    export os="termux"
-    export v="$HOME/.vim"
-    ;;
-  *"linux"*)
-    export os="unix"
-    export v="$HOME/.vim"
-    ;;
-  *"mingw"*)
-    export os="windows"
-    export v="$HOME/vimfiles"
-    ;;
-  *)
-    export os="unknown"
-    export v="$HOME/.vim"
-    ;;
-  esac
-  echo "$os"
-}
 
 myos=$(get_os)
 
 # Clause: work only on Linux
-if [[ unix != "$myos" ]]; then
+if [[ linux != "$myos" ]]; then
   pinfo "Exiting <= not linux OS => no ssh"
   exit 0
 fi
 
 # Must install ssh on github cloud (I guess)
 if [[ -v GITHUB_ACTION ]]; then
-  install_ssh_ubuntu
+  #install_ssh_ubuntu
+  # TODO cannot ssh to self
+  exit 0
 fi
 
 
@@ -63,6 +65,7 @@ start_test_function "dispatch --at (via dispatch)"
   equal 42 $? "dispatch --at localhost example fail" \
     --desc "Command should return my failure <= This prooves that the exit status is well transmited with the --at option" \
     --tip "Run: 'ssh localhost' <= Maybe you cannot connect to ssh" \
+    --tip "Run: 'ssh-keygen -t rsa' <= You must a key pair if above command failed with: ssh-copy-id no identities found error" \
     --tip "Run: 'ssh-copy-id localhost' <= You do not want to type password everytime" \
     --tip "Run: 'sudo systemctl status ssh' <= Maybe ssh service is not running" \
     --tip "Run: 'sudo systemctl enable ssh' <= Maybe ssh service is not enabled" \

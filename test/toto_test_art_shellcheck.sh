@@ -32,7 +32,7 @@ test_shellcheck(){
   fi
 
   # Clause shellcheck version > 0.7
-  local version=$(shellcheck -V | grep -oP '(?<=version: )\d+\.\d')
+  local version=$(shellcheck -V | sed -n '/version: [0-9.]/s/version: *//p')
   version=${version##0.}
   if (( version >= 7 )); then
     equal 0 0 "Info: OK: Shellcheck version >= 0.7 ($version)"

@@ -75,7 +75,8 @@ test_function_main_help(){
   # Help
   out2=$(command dispatch --help)
   [[ "$out1" == "$out2" ]]; equal 0 $? "--help: 'command dispatch' and 'command dispatch --help' same output (hidden as large)"
-  readarray -t a_help_key < <(echo "$out" | grep --color=never -Po '^(\e.*?m)?\K\-*[a-z_]+')
+  # Warning was grep perl '^(\e.*?m)?\K\-*[a-z_]+'
+  readarray -t a_help_key < <(echo "$out" | grep --color=never -oE $'^(\e[^m]*m)?[-0-9A-Za-z_]+' | sed $'s/^\e[^m]*m//')
   is_in_array example "${a_help_key[@]}"; equal 0 $? "command dispatch --help with example key=${a_help_key[*]})"
   is_in_array --complete "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --complete"
   is_in_array --help "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --help"
@@ -91,7 +92,7 @@ test_function_example_help(){
   g_dispatch_i_res=0
 
   out=$(command dispatch example --help); equal 0 $? 'command dispatch example --help status OK'
-  readarray -t a_example_help_key <  <(echo "$out" | grep --color=never -Po '^(\e.*?m)?\K\-*[a-z_]+')
+  readarray -t a_example_help_key <  <(echo "$out" | grep --color=never -oE $'^(\e[^m]*m)?[-0-9A-Za-z_]+' | sed $'s/^\e[^m]*m//')
   is_in_array example "${a_example_help_key[@]}"; equal 1 $? "command dispatch example --help without example"
   is_in_array --complete "${a_example_help_key[@]}"; equal 1 $? "command dispatch example --help without --complete"
   is_in_array --help "${a_example_help_key[@]}"; equal 1 $? "command dispatch example --help without --help"
@@ -110,10 +111,10 @@ test_function_irm_example_doc(){
   g_dispatch_i_res=0
 
   out=$(command dispatch example --doc); equal 0 $? 'command dispatch --doc status OK'
-  grep -qF 'Fail with status 42' <<< "$out"; equal 0 $? "--doc: First function documentation present"
-  grep -qF 'EXAMPLE environment variable content' <<< "$out"; equal 0 $? "--doc -> Long function docuemntation showed"
-  grep -qFi 'example' <<< "$out"; equal 0 $?  "--doc: First file documentation present"
-  grep -qF 'Examples draw where precept fails' <<< "$out"; equal 0 $?  "--doc -> Long file documentation showed"
+  [[ "$out" =~ 'Fail with status 42' ]]; equal 0 $? "--doc: First function documentation present"
+  [[ "$out" =~ 'EXAMPLE environment variable content' ]]; equal 0 $? "--doc -> Long function docuemntation showed"
+  [[ "$out" =~ 'example' ]]; equal 0 $?  "--doc: First file documentation present"
+  [[ "$out" =~ 'Examples draw where precept fails' ]]; equal 0 $?  "--doc -> Long file documentation showed"
   grep -q 'EXAMPLE.*-*.*default_example_value' <<< "$out"; equal 0 $?  "--doc -> environment doc showed"
 
   return "$g_dispatch_i_res"
@@ -148,9 +149,10 @@ test_function_irm_example_calls(){
   out=$(command dispatch example succeed 2> /dev/null) &> /dev/null; equal 0 $? 'command dispatch example succeed staus'
   out=$(command dispatch example fail 2> /dev/null) &> /dev/null; equal 42 $? 'command dispatch example fail status'
   err=$(command dispatch example fail 2>&1 > /dev/null); equal 42 $? 'command dispatch example fail status'
-  num=$(grep -cP '^(\e.*?m)?\K<--' <<< "$out"); echo 0 $? 'command dispatch example grep 1'
+  # Legacy used to be grep -cP '^(\e.*?m)?\K<--'
+  num=$(grep -cE $'^(\e[^m]*m)?<--' <<< "$out"); echo 0 $? 'command dispatch example grep 1'
   equal 0 "$num" "no print_script_end in stdout"
-  num=$(grep -cP '^(\e.*?m)?\K<--' <<< "$err"); echo 0 $? 'command dispatch example grep 2'
+  num=$(grep -cE $'^(\e[^m]*m)?<--' <<< "$err"); echo 0 $? 'command dispatch example grep 2'
   equal 1 "$num" "only one print_script_end in stderr"
 
   return "$g_dispatch_i_res"

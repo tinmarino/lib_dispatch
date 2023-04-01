@@ -35,7 +35,7 @@ start_test_function "Completion dispatch ex"
 
 start_test_function "Completion dispatch example"
   out=$(print_complete 99 "dispatch example \"\"")
-  readarray -t a_example_complete_key < <(grep -oP '^-*[a-z_]+' <<< "$out")
+  readarray -t a_example_complete_key < <(grep -o '^-*[a-z_]\+' <<< "$out")
   is_in_array --complete "${a_example_complete_key[@]}"; equal 0 $? "complete: dispatch example with --complete (keys=${a_example_complete_key[*]})"
   is_in_array --help "${a_example_complete_key[@]}"; equal 0 $? "complete dispatch example with --help"
   is_in_array example "${a_example_complete_key[@]}"; equal 1 $? "dispatch example --help without example"
@@ -44,7 +44,7 @@ start_test_function "Completion dispatch example"
 
 start_test_function "Completion dispatch example succeed"
   out=$(print_complete 99 "dispatch example succeed \"\"")
-  readarray -t a_example_succeed_complete_key < <(grep -oP '^-*[a-z_]+' <<< "$out")
+  readarray -t a_example_succeed_complete_key < <(grep -o '^-*[a-z_]\+' <<< "$out")
   is_in_array example_one "${a_example_succeed_complete_key[@]}"; equal 0 $? "complete: dispatch example succeed custom completion (keys=${a_example_complete_key[*]})"
   is_in_array succeed "${a_example_succeed_complete_key[@]}"; equal 1 $? "complete: dispatch example succeed should not display succeed which is a subcommand (keys=${a_example_complete_key[*]})"
   is_in_array --complete "${a_example_succeed_complete_key[@]}"; equal 1 $? "complete: dispatch example succeed should not display --complete which is lib_dispatch related and not example succeed related (keys=${a_example_complete_key[*]})"
@@ -52,9 +52,9 @@ start_test_function "Completion dispatch example succeed"
 
 start_test_function "Completion dispatch --complete directly"
   out=$(dispatch --complete); [[ -n "$out" ]]; equal 0 $? "Completion: dispatch --complete not null"
-  equal "" "$(grep -vP '^\S*\s*:' <<< "$out")" "Completion all separated with ':'"
+  equal "" "$(grep -v '^[^ ]* *:' <<< "$out")" "Completion all separated with ':'"
   out=$(dispatch example --complete); [[ -n "$out" ]]; equal 0 $? "Completion2: dispatch --complete not null"
-  equal "" "$(grep -vP '^\S*\s*:' <<< "$out")" "Completion2: all separated with ':'"
+  equal "" "$(grep -v '^[^ ]* *:' <<< "$out")" "Completion2: all separated with ':'"
 
 
 start_test_function "Completion Option"

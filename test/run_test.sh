@@ -9,8 +9,13 @@ source "$gs_root_path/test/lib_test.sh"
 main(){
   : "Check dispatch project"
   # TODO warn if remote
-  local start_time=$(date +%s%N)
-  local res=0 ret=0 i_fd=0 b_async=0 #i_fd_summary=0
+  if [[ osx != $(get_os) ]]; then
+    # In milisecond
+    local -i start_time=$(date +%s%N)
+  else
+    local -i start_time=$(date +%s)
+  fi
+  local -i res=0 ret=0 i_fd=0 b_async=0 #i_fd_summary=0
   local -a a_pid=()  # Array of pid
   local -a a_test_file=()  # Array of test file name to execute
   local -a a_fd=()  # Array of fd corresponding to the stdout of this file to lock
@@ -172,11 +177,20 @@ main(){
     (( res == 0 )) && [[ -n "$s_error" ]] && res=1
   fi
 
-  # Say Bye
-  local end_time=$(date +%s%N)
-  local total_time=$((end_time - start_time))
-  local sec_time=$((total_time / 1000000000))  # mili, micro, nano
-  local mili_time=$(((total_time / 1000000) % 1000 ))  # mili, micro, nano
+  # Calcultate time spent
+  if [[ osx != $(get_os) ]]; then
+    local -i end_time=$(date +%s%N)
+    local -i total_time=$((end_time - start_time))
+    local -i sec_time=$((total_time / 1000000000))  # mili, micro, nano
+    local -i mili_time=$(((total_time / 1000000) % 1000 ))  # mili, micro, nano
+  else
+    local -i end_time=$(date +%s)
+    local -i total_time=$((end_time - start_time))
+    local -i sec_time=$((total_time))  # mili, micro, nano
+    local -i mili_time=000
+  fi
+
+  # Craft message
   printf -v script_time '%dh:%dm:%ds.%dms' $((sec_time/3600)) $((sec_time%3600/60)) $((sec_time%60)) $((mili_time))
   local msg=""
   (( res == 0 )) \
@@ -184,6 +198,7 @@ main(){
     || msg+="${cred}[-] Main Error:"
   msg+="'Dispatch check self $*' returned with $res status in $script_time$cend"
 
+  # Say Bye
   >&2 echo -e "$msg"
 
   return "$res"

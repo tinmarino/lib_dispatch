@@ -62,7 +62,7 @@ test_function_abat(){
 
   # -- N: no input
   # Comment out as not running in jenkins ...
-  # -- out=$(timeout 1 bash -c "source \"$gs_root_path/test/lib_test.sh\"; abat 2> /dev/null"); equal "$E_REQ" $? 'abat must complain if not run in a pipe'
+  # -- out=$(command_timeout 1 bash -c "source \"$gs_root_path/test/lib_test.sh\"; abat 2> /dev/null"); equal "$E_REQ" $? 'abat must complain if not run in a pipe'
   # -- equal '' "$out" 'abat out of pipe should not print to stdout'
 }
 
@@ -176,7 +176,7 @@ test_function_bash_timeout(){
   # Define helper function
   test_timeout(){
     # 1: max timout, 2: soft timeout
-    timeout "$1" bash -c '
+    system_timeout "$1" bash -c '
       '"$(declare -f bash_timeout)"'
       bash_timeout '"$2"' '"'$3'"'
       exit $?  # In subshell
