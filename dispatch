@@ -8,6 +8,7 @@ export g_dispatch_prohect_name=ART
 # Source lib
 gs_root_path=$(readlink -f "${BASH_SOURCE[0]}")
 gs_root_path=$(dirname "$gs_root_path")
+export gs_root_path
 source "$gs_root_path"/script/lib_dispatch.sh
 
 script_path="$gs_root_path"/script

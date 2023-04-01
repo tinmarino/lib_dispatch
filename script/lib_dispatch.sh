@@ -2011,14 +2011,14 @@ equal(){
 
   # Instrospect URL of caller
   # -- Should look like
-  # -- https://github.com/tinmarino/vimfiles/blob/d9b37aa136abd8c999958dad8bb89e092c63486d/Dockerfile
+  # -- https://github.com/tinmarino/lib_dispatch/blob/8e3da35/dispatch#L8
 
   # -- 1/ Declare prefix
-  local url='https://github.com/tinmarino/vimfiles/blob/'
+  local url='https://github.com/tinmarino/lib_dispatch/blob/'
   # -- 2/ Get commit id (once)
-  if [[ ! -v DISPATCH_SELF_COMMIT ]]; then
+  if [[ ! -v DISPATCH_SELF_COMMIT || -z "$DISPATCH_SELF_COMMIT" ]]; then
     export DISPATCH_SELF_COMMIT=master
-    if [[ -d "$gs_root_path" ]] \
+    if [[ -v gs_root_path && -d "$gs_root_path" ]] \
         && is_command git \
         && local commit_id=$(git -C "$gs_root_path" rev-parse HEAD) \
         && [[ -n "$commit_id" ]]; then
@@ -2030,7 +2030,7 @@ equal(){
   local file="${BASH_SOURCE[$i_depth]:-terminal}"
   file=${file##"$gs_root_path"/}
   # -- 4/ Craft
-  url+="${file}?at=${DISPATCH_SELF_COMMIT}#${line_nr}"
+  url+="${DISPATCH_SELF_COMMIT}/${file}#L${line_nr}"
 
   # Craft default line content
   [[ -z "$brief" ]] && brief="from $(print_stack 2 2 | tr '\n' ' ')"
@@ -2262,6 +2262,269 @@ is_sourced(){
   : 'Returns 0 if script is sourced and not executed, ToTest'
   [[ -v BASH_SOURCE ]] && (( ${#BASH_SOURCE[@]} > 0 )) && [[ "${BASH_SOURCE[0]}" == "$0" ]]
   return $(( ! $? ))
+}
+
+
+# 0/ move me out of here
+check_requirement(){
+  : 'Utility to check if requirements are present on the machine
+    Call: before runnning a command
+    Side Effect: may exit
+    :param: alma_sw -> ALMA Software present in \$ALMA_SW directory
+    :param: alma_branch -> ALMA Software is in \$BRANCH branch (called with alma_sw)
+    :param: alma_root -> ALMA Software compiled in /alma
+    :param: docker -> Docker is installed on the machine
+    :param: variable:VAR1:var2 -> \$VAR1 and \$var2 variables exist and is not void
+    :param: command:python:docker -> python and docker commands exist
+  '
+  # TODO create an helper function to safely retrieve variable with readarray
+  local -i res=0
+  local arg s_varname s_in_name
+  local -a a_variable_name=()
+
+  # Check each argument
+  for arg in "$@"; do
+    case "$arg" in
+      alma_sw)
+        # Alma Software
+        # -- Read input: argument or environment
+        s_varname=ALMA_SW
+        arg="$(echo "$*" | grep -o "alma_sw:[^[:space:]]*")"
+        # -- Parse input
+        if [[ -n "$arg" ]]; then
+          IFS=':' read -r -a a_variable_name <<< "$arg"
+          if (( ${#a_variable_name[@]} >=1 )); then
+          for s_in_name in "${a_variable_name[@]:1}"; do
+            [[ -z "${s_in_name}" ]] && continue
+            s_varname=$s_in_name
+          done
+          fi
+        fi
+        local alma_sw="${!s_varname}"
+        # -- Check: Is environment variable present
+        if [[ -z "$alma_sw" ]]; then
+          perr "Requirement: \$ALMA_SW must be set to Alma Sotware directory (s_varname=$s_varname)" \
+               "Tip: export ALMA_SW=~/AlmaSw"
+          res=1
+        fi
+        # -- Check: Is directory present?
+        if [[ ! -d "$alma_sw" ]]; then
+          perr "Requirement: ALMA_SW='$alma_sw' directory not found (PWD=$PWD)" \
+               "Tip: export WORKSPACE=~jenkins/workspace/2021_04_APR/COMMON-2021APR-B"
+          res=1
+        fi
+        # -- Check: Is ACS in directory?
+        if [[ ! -f "$alma_sw/ACS/LGPL/acsBUILD/config/.acs/.bash_profile.acs" ]]; then
+          perr "Requirement: AlmaSw directory seems to not contain Alma Software (in $alma_sw)" \
+               "Tip: irm sync almasw  # API may change"
+          res=1
+        fi
+        # -- Check: Is SUBSYSTEM in directory
+        # -- -- Fill directory name
+        local a_diretory=()
+        local s_dir
+        for s_dir in "$alma_sw"/*/; do
+          a_diretory+=("$(basename "$s_dir")")
+        done
+        # -- -- Check each SUBSYSTEM dir is here
+        local s_subsystem
+        # shellcheck disable=SC2206  # Quote to prevent
+        local a_subsystem=($SUBSYSTEMS)
+        # TODO not in bash 4.2
+        #readarray -d " " -t a_subsystem <<< "$SUBSYSTEMS"
+        for s_subsystem in $SUBSYSTEMS; do
+          if ! is_in_array "$s_subsystem" "${a_subsystem[@]}"; then
+            perr "Requirement: AlmaSw directory do not contain subsystem directory" \
+              "Description: $s_subsystem not in $alma_sw which contains: (${a_diretory[*]})" \
+              "Tip: Check that $alma_sw is well cloned"
+            res=1
+          fi
+        done
+        ;;
+
+      # Alma branch
+      alma_branch)
+        # Is environment variable present
+        if [[ -z "$BRANCH" ]]; then
+          pwarn "LibAlma: better specify \$BRANCH environment variable for AlmaSw"
+        else
+          pushd "$ALMA_SW" > /dev/null || res=1
+          branch_present=$(git rev-parse --abbrev-ref HEAD)
+          if [[ ! "$BRANCH" == "$branch_present" ]]; then
+            perr "Requirement: AlmaSw on branch $branch_present and wanted branch $BRANCH"
+            res=1
+          fi
+          popd > /dev/null || res=1
+        fi
+        ;;
+
+    # Alma Root
+    alma_root)
+      local filepath="/alma/ACS-current/ACSSW/config/.acs/.bash_profile.acs"
+      if [[ ! -f "$filepath" ]]; then
+        perr "Requirement: AlmaSw not compiled in /alma <= $filepath not present"
+        res=1
+      fi
+      ;;
+
+    # Command
+    command:*)
+      arg="$(echo "$*" | grep -o "command:[^[:space:]]*")"
+      [[ -z "$arg" ]] && continue
+      IFS=':' read -r -a a_variable_name <<< "$arg"
+          if (( ${#a_variable_name[@]} >=1 )); then
+      for cmd in "${a_variable_name[@]:1}"; do
+        if ! command -v "$cmd" > /dev/null; then
+          perr "Requirement $cmd command not found, I will not install it for you" \
+               "Tip: yum install $cmd  # or pip"
+          res=$E_REQ
+        fi
+      done
+          fi
+      ;;
+
+    # Variable
+    variable:*)
+      arg="$(echo "$*" | grep -o "variable:[^[:space:]]*")"
+      [[ -z "$arg" ]] && continue
+      IFS=':' read -r -a a_variable_name <<< "$arg"
+          if (( ${#a_variable_name[@]} >=1 )); then
+      for s_varname in "${a_variable_name[@]:1}"; do
+        if [[ ! -v "$s_varname" ]] || [[ -z "${!s_varname}" ]]; then
+          perr "Requirement variable '$s_varname' must be set" \
+               "Tip: if UPPER_CASE: Set the environment variable before calling" \
+               "Tip: if lower_case: Set the sae with upper case or read doc for arguments"
+          res=1
+        fi
+      done
+          fi
+      ;;
+
+    # Release
+    release*)
+      # -- Read input: argument or environment
+      local arg="$(echo "$*" | grep -o "release:[^[:space:]]*")"
+      IFS=':' read -r -a a_variable_name <<< "$arg"
+      # -- Parse input (safely)
+      s_varname=RELEASE
+          if (( ${#a_variable_name[@]} >=1 )); then
+      for s_in_name in "${a_variable_name[@]:1}"; do
+        [[ -z "${s_in_name}" ]] && continue
+        s_varname=$s_in_name
+      done
+          fi
+      local release="${!s_varname}"
+
+      # Check match regex
+      if [[ ! "$release" =~ ^[0-9]{4}[A-Z]{3}$ ]] && [[ ! "$release" =~ CYCLE* ]]; then
+        perr "Incorrect \$RELEASE value: '$release'" \
+             "Tip: export RELEASE=2021NOV"
+             "Tip: export RELEASE=CYCLE8"
+        res=1
+      fi
+      ;;
+
+    acs_version*)
+      # -- Read input: argument or environment
+      local arg="$(echo "$*" | grep -o "acs_version:[^[:space:]]*")"
+      IFS=':' read -r -a a_variable_name <<< "$arg"
+      # -- Parse input (safely)
+      s_varname=ACS_VERSION
+          if (( ${#a_variable_name[@]} >=1 )); then
+      for s_in_name in "${a_variable_name[@]:1}"; do
+        [[ -z "${s_in_name}" ]] && continue
+        s_varname=$s_in_name
+      done
+          fi
+      local acs_version="${!s_varname}"
+
+      # Check match regex
+      if [[ ! "${acs_version}" =~ ^ACS-[0-9]{4}(FEB|APR|JUN|AUG|OCT|DEC)$ ]]; then
+        perr "Incorrect \$ACS_VERSION value: '$acs_version'" \
+             "Tip: export ACS_VERSION=2021OCT"
+        res=1
+      fi
+      ;;
+    esac
+  done
+
+  # Time to leave
+  if (( res != 0 )); then
+    perr "Missing requirement $*" \
+         "See previous error log above"
+    return "$E_REQ"
+  fi
+  return 0
+}
+
+
+expand_user_at_host(){
+  : 'Expand USER@HOST from command line
+    Called by --at, tested
+    Arg1: reduced user@host, ex: acse2, 707, almamgr@acse2
+  '
+  local at=$1
+  local host=${at#*@}
+  local user="" userat=""
+
+  # Split string
+  if [[ "$at" =~ .*@.* ]]; then
+    user="${at%%@*}"
+  fi
+
+  # Set option: case insensitive
+  s_cmd_shopt_save=$(shopt -p nocasematch)
+  shopt -s nocasematch
+
+  # Expand host
+  case "$host" in
+    acse?)
+      host="${host}-gns.sco.alma.cl"
+      : "${user:=almaop@}"
+      ;;
+    ape?)
+      host="${host}-gns.osf.alma.cl"
+      : "${user:=almaop@}"
+      ;;
+    hil)
+      host="ape-hil-gns.osf.alma.cl"
+      : "${user:=almaop@}"
+      ;;
+    7[0-9][0-9])
+      host="v-bfnode${host}.sco.alma.cl"
+      : "${user:=jenkins@}"
+      ;;
+    v-bfnode???)
+      host="${host}.sco.alma.cl"
+      : "${user:=jenkins@}"
+      ;;
+    farm|buildfarm)
+      host='buildfarm.sco.alma.cl'
+      : "${user:=jenkins@}"
+      ;;
+  esac
+
+  # Expand user
+  case "$user" in
+    op)
+      user=almaop
+      ;;
+    mgr)
+      user=almamgr
+      ;;
+    proc)
+      user=almaproc
+      ;;
+  esac
+
+  # Reset option: case insensitive
+  $s_cmd_shopt_save
+
+  # Fill userat <= user . "@"
+  [[ -n "$user" ]] && userat="${user%%@*}@"
+
+  # Print out
+  echo "$userat$host"
 }
 
 
