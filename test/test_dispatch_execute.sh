@@ -10,22 +10,20 @@
   # shellcheck disable=SC1091  # Not following
   source "$gs_root_path/test/lib_test.sh"
 
-
-start_test_function "Dispatch: Source code to test"
-  out=$("$gs_root_path/script/lib_dispatch.sh"); equal 0 $? "Executing lib_dispatch should return 0"
-  readarray -t a_key < <(grep -oP '^(\e.*?m)?\K-*[a-z_]+' <<< "$out")
-  is_in_array --complete "${a_key[@]}"; equal 0 $? "Executing lib_dispatch shows --complete"
-  is_in_array magic "${a_key[@]}"; equal 0 $? "Executing lib_dispatch shows magic"
-
-  # Unexport is_in_array for my personal laptop (mtourneb)
+# Unexport is_in_array for my personal laptop (mtourneb)
   if [[ funtion == "$(type -t is_in_array)" ]]; then
     export -nf is_in_array
   fi
-
-
-# Undefine is_in_array
   fcp is_in_array save_is_in_array
   unset is_in_array 2> /dev/null
+
+start_test_function "Dispatch: Source code to test"
+
+  out=$("$gs_root_path/script/lib_dispatch.sh")
+  equal 0 $? "Executing lib_dispatch should return 0"
+  readarray -t a_key < <(grep -oP '^(\e.*?m)?\K-*[a-z_]+' <<< "$out")
+  save_is_in_array --complete "${a_key[@]}"; equal 0 $? "Executing lib_dispatch shows --complete"
+  save_is_in_array is_in_array "${a_key[@]}"; equal 0 $? "Executing lib_dispatch shows is_in_array"
 
 
 start_test_function "Dispatch: Execute self"
@@ -36,15 +34,11 @@ start_test_function "Dispatch: Execute self"
   grep -qF 'is_in_array' <<< "$out"; equal 0 $? "lib_disptach dispatch is_in_array present"
 
 
-# Redefined is_in_array
-  fcp save_is_in_array is_in_array
-
-
 start_test_function "Dispatch: Parse and check output"
   readarray -t a_key < <(grep -oP '^(\e.*?m)?\K-*[a-z_]+' <<< "$out")
-  is_in_array is_in_array "${a_key[@]}"; equal 0 $? "Executing lib_disptach shows is_in_array"
-  is_in_array perr "${a_key[@]}"; equal 0 $? 'present perr'
-  is_in_array dispatch "${a_key[@]}"; equal 0 $? 'present dispatch'
+  save_is_in_array is_in_array "${a_key[@]}"; equal 0 $? "Executing lib_disptach shows is_in_array"
+  save_is_in_array perr "${a_key[@]}"; equal 0 $? 'present perr'
+  save_is_in_array dispatch "${a_key[@]}"; equal 0 $? 'present dispatch'
 
 
 >&2 echo -e "\n<= $0 returned: $g_dispatch_i_res"

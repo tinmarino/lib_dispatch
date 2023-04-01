@@ -8,9 +8,12 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   unit:
-    name: Unit
-    # Copied from: https://github.com/pylint-dev/pylint/pull/2758
-    runs-on: ubuntu-latest
+    name: "Unit: {{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -18,4 +21,10 @@ jobs:
 
       - name: Run unit
         run: |
+          # Prepare ssh
+          apt install openssh-server
+          systemctl enable ssh
+          ssh-copy-id localhost
+          ssh-copy-id $USER@$HOSTNAME
+
           ./dispatch util unit_test

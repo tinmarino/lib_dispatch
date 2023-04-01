@@ -58,14 +58,16 @@ start_test_function "Completion dispatch --complete directly"
 
 
 start_test_function "Completion Option"
-  out=$(dispatch --complete example --value ""); [[ -n "$out" ]]; equal 0 $? "val1: dispatch --complete example --value not null"
+  out=$(command dispatch --complete example --value "");
+  [[ -n "$out" ]]; equal 0 $? "val1: dispatch --complete example --value not null"
   [[ "$out" =~ first_value ]]; equal 0 $? 'val1: first value'
   [[ "$out" =~ second_value ]]; equal 0 $? 'val1: second value'
   [[ "$out" =~ succeed ]]; equal 1 $? 'val1: succeed function abscent'
   # TODO test filtering with something more real like:
   # -- dispatch --complete example --value fir
 
-  out=$(dispatch --complete example --value toto ""); [[ -n "$out" ]]; equal 0 $? "val2: not null"
+  out=$(command dispatch --complete example --value toto "");
+  [[ -n "$out" ]]; equal 0 $? "val2: not null"
   [[ "$out" =~ succeed ]]; equal 0 $? 'val0: succeed function present'
   [[ "$out" =~ first_value ]]; equal 1 $? 'val0: first value abscent'
 
@@ -76,8 +78,8 @@ start_test_function "Completion Option Trail"
   }
 
   # 0123456789012345678901234567890123456789
-  # dispatch example --value fi example
-  equal first_value "$(print_complete_fake 22 "example --value fi succeed")" "Completion trail1"
+  # dispatch example --value fi example  # Cursor at 27, after 'fi'
+  equal first_value "$(print_complete_fake 27 "example --value fi succeed")" "Completion trail1"
 
 
 >&2 echo -e "\n<= $0 returned: $g_dispatch_i_res"

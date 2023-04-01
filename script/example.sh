@@ -47,7 +47,6 @@ __set_env(){
   set -a
   : "${EXAMPLE:=default_example_value}"
   set +a
-  magic
 }
 
 

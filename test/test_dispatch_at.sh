@@ -10,6 +10,48 @@
   source "$gs_root_path/test/lib_test.sh"
 
 
+# Prepare
+set_ssh_ubuntu(){
+  sudo apt install openssh-server
+  sudo systemctl enable ssh
+  ssh-copy-id localhost
+}
+
+
+get_os(){
+  # shellcheck disable=SC2088
+  uname=$(uname -a)
+  uname=${uname,,}
+  case $uname in
+  *"android"*)
+    export os="termux"
+    export v="$HOME/.vim"
+    ;;
+  *"linux"*)
+    export os="unix"
+    export v="$HOME/.vim"
+    ;;
+  *"mingw"*)
+    export os="windows"
+    export v="$HOME/vimfiles"
+    ;;
+  *)
+    export os="unknown"
+    export v="$HOME/.vim"
+    ;;
+  esac
+  echo "$os"
+}
+
+myos=$(get_os)
+
+# Clause: work only on Linux
+if [[ unix != "$myos" ]]; then
+  pinfo "Exiting <= not linux OS => no ssh"
+  exit 0
+fi
+
+
 start_test_function "dispatch --at (via dispatch)"
   bash_timeout 2 "$gs_root_path"/dispatch --at localhost example fail &> /dev/null
   equal 42 $? "dispatch --at localhost example fail" \
@@ -18,7 +60,7 @@ start_test_function "dispatch --at (via dispatch)"
     --tip "Run: 'ssh-copy-id localhost' <= You do not want to type password everytime" \
     --tip "Run: 'sudo systemctl status ssh' <= Maybe ssh service is not running" \
     --tip "Run: 'sudo systemctl enable ssh' <= Maybe ssh service is not enabled" \
-    --tip "Run: 'sudo apt install openssh' <= Maybe ssh service is not installed"
+    --tip "Run: 'sudo apt install openssh-server' <= Maybe ssh service is not installed"
 
   bash_timeout 1 "$gs_root_path"/dispatch --at localhost example succeed &> /dev/null
   equal 0 $? "dispatch --at localhost example succeed" \
