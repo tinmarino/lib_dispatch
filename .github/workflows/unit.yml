@@ -8,7 +8,7 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   unit:
-    name: "Unit: {{ matrix.os }}"
+    name: "Unit: ${{ matrix.os }}"
     strategy:
       fail-fast: false
       matrix:
@@ -21,10 +21,5 @@ jobs:
 
       - name: Run unit
         run: |
-          # Prepare ssh
-          apt install openssh-server
-          systemctl enable ssh
-          ssh-copy-id localhost
-          ssh-copy-id $USER@$HOSTNAME
-
-          ./dispatch util unit_test
+          bash --version
+          bash ./dispatch util unit_test

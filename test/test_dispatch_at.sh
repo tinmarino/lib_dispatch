@@ -11,10 +11,11 @@
 
 
 # Prepare
-set_ssh_ubuntu(){
+install_ssh_ubuntu(){
   sudo apt install openssh-server
   sudo systemctl enable ssh
   ssh-copy-id localhost
+  ssh-copy-id "$USER@$HOSTNAME"
 }
 
 
@@ -49,6 +50,11 @@ myos=$(get_os)
 if [[ unix != "$myos" ]]; then
   pinfo "Exiting <= not linux OS => no ssh"
   exit 0
+fi
+
+# Must install ssh on github cloud (I guess)
+if [[ -v GITHUB_ACTION ]]; then
+  install_ssh_ubuntu
 fi
 
 
