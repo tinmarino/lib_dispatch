@@ -1,0 +1,5 @@
+*.swp
+*_doc_api.xml
+.tags
+junit_last_result.xml
+sandbox/

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# ♾️ Dispatch standalone caller
+# Call me like dispatch myscript myfunction
+# TODO, not oeprational yet, this is still an example
+
+export g_dispatch_prohect_name=ART
+
+# Source lib
+gs_root_path=$(readlink -f "${BASH_SOURCE[0]}")
+gs_root_path=$(dirname "$gs_root_path")
+source "$gs_root_path"/script/lib_dispatch.sh
+
+script_path="$gs_root_path"/script
+
+
+declare -A g_dispatch_d_cmd=(
+  # Utils
+  [example]="$script_path/example.sh"
+  [util]="$script_path/util.sh"
+)
+
+register_subcommand_from_gd_cmd
+
+__default(){
+  print_usage_main --help
+}
+
+# If executed and not sourced, print self doc
+if [[ -v BASH_SOURCE ]] && (( ${#BASH_SOURCE[@]} > 0 )) && [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  dispatch "$@"; exit $?;
+fi

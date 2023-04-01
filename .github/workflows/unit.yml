@@ -1,0 +1,21 @@
+---
+# Launch unit test suite with bash
+
+name: Unit
+
+# yamllint disable-line rule:truthy
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  unit:
+    name: Unit
+    # Copied from: https://github.com/pylint-dev/pylint/pull/2758
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+
+      - name: Run unit
+        run: |
+          ./dispatch util unit_test
