@@ -97,14 +97,21 @@
 
   can_color(){
     : "Test if stdoutput supports color (void -> bool)"
+    # Clause: Github actions web interface supports ansi escape
+    [[ -v GITHUB_ACTION ]] && return 0
+
+    # Clause: Tty terminal supports ansi escape
     (( ! g_dispatch_b_complete )) \
       && command -v tput &> /dev/null \
       && tput colors &> /dev/null \
-      && return 0 \
-      || return 1
+      && return 0
+
+    # IDK where I am, so I do not colorize
+    return 1
   }
 
   set_color(){
+    : 'Gruvbox: https://github.com/alacritty/alacritty/wiki/Color-schemes#gruvbox'
     declare -g cfend="\e[39m"           # Normal foreground
     declare -g cend="\e[0m"             # Reset all
     declare -g cbold="\e[1m"            # Bold, can be added to colors
@@ -129,7 +136,6 @@
     declare -g cpurple=''
   }
 
-  # Gruvbox: https://github.com/alacritty/alacritty/wiki/Color-schemes#gruvbox
   if can_color "$@"; then
     set_color
     # Changed the yellow to orange so can be seen on whit bg
@@ -855,7 +861,7 @@ get_file_docstring(){
       };
 
       # End of parsing
-      /^\s*$|^\s*[^# ]|^\s*#######/ {exit};
+      /^ *$|^ *[^# ]|^ *#######/ {exit};
 
       # Print those lines (remove the shband)
       NR>=2 {print};
