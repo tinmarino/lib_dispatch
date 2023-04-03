@@ -2800,6 +2800,27 @@ doc_api(){
       <td value="Description" bgcolor="white" fontcolor="black" fontattribute="bold" align="left" width="200"/>
       </tr>
     '
+  elif [[ html == "$format" ]]; then
+    # Redirect stdout
+    touch "$cmd_name"_doc_api.html
+    exec 1> "$cmd_name"_doc_api.html
+    echo -e "$(print_unindent '
+      <!DOCTYPE html>
+      <html>
+      <head>
+      <title>'"$cmd_name"' functions</title>
+      <style>
+      '"$(<"$gs_root_path"/res/table.css)"'
+      </style>
+      </head>
+      <body>
+      <table>
+      <tr>
+        <th>Sub Command</th>
+        <th>Tail Function</th>
+        <th>Description</th>
+      </tr>
+      ')"
   fi
 
   # For all subcommand
@@ -2812,13 +2833,11 @@ doc_api(){
       | sed 's/</\&lt;/g' \
       | sed 's/>/\&gt;/g' \
       | sed 's/"/\&quot;/g' \
-      | sed "s/'/\&#39;/g"
+      | sed "s/'/\\&#39;/g"
     )
 
     # Print hi: current subcommand head
-    if [[ stdout == "$format" ]]; then
-      echo "# $line_cmd"
-    else
+    if [[ xml == "$format" ]]; then
       echo -e '
         <tr></tr>
         <tr>
@@ -2826,7 +2845,18 @@ doc_api(){
           <td value="" bgcolor="LightGrey" fontcolor="black" fontattribute="bold" align="left" width="200"/>
           <td value="'"$subcomment"'" bgcolor="LightGrey" fontcolor="black" fontattribute="bold" align="left" width="200"/>
         </tr>
-      '
+        '
+    elif [[ html == "$format" ]]; then
+      echo -e "$(print_unindent '
+        <tr></tr>
+        <tr>
+          <th>'"${subcmd^^}"'</th>
+          <th></th>
+          <th>'"$subcomment"'</th>
+        </tr>
+      ')"
+    else  # Including if [[ stdout == "$format" ]]; then
+      echo "# $line_cmd"
     fi
 
     # Get tail workers (aka subsub)
@@ -2846,11 +2876,9 @@ doc_api(){
         | sed 's/</\&lt;/g' \
         | sed 's/>/\&gt;/g' \
         | sed 's/"/\&quot;/g' \
-        | sed "s/'/\&#39;/g"
+        | sed "s/'/\\&#39;/g"
       )
-      if [[ stdout == "$format" ]]; then
-        echo "$cmd $subcmd $function  # $comment"
-      else
+      if [[ xml == "$format" ]]; then
         echo -e '
           <tr></tr>
           <tr>
@@ -2859,6 +2887,17 @@ doc_api(){
             <td value="'"$comment"'" bgcolor="white" fontcolor="black" fontattribute="normal" align="left" width="200"/>
           </tr>
         '
+      elif [[ html == "$format" ]]; then
+        echo -e "$(print_unindent '
+          <tr></tr>
+          <tr>
+            <td>'"$subcmd"'</td>
+            <td>'"$function"'</td>
+            <td>'"$comment"'</td>
+          </tr>
+        ')"
+      else  # including if [[ stdout == "$format" ]]; then
+        echo "$cmd $subcmd $function  # $comment"
       fi
     done
 
@@ -2868,11 +2907,18 @@ doc_api(){
 
   # Print Bye: close main head
   if [[ xml == "$format" ]]; then
-	  echo -e '
+    echo -e '
       </table>
-	    </section>
+      </section>
     '
     # Close stdout redirection
+    exec 1>&-
+  elif [[ html == "$format" ]]; then
+    echo -e "$(print_unindent '
+      </table>
+      </body>
+      </html>
+    ')"
     exec 1>&-
   fi
 
@@ -2884,8 +2930,9 @@ doc_api(){
 __complete_doc_api(){
   # From GSiringo presentation: https://confluence.alma.cl/display/ESG/ALMA+Band+Integration
   echo "
-    stdout : Print documentation in text format to stdout
-    xml : Print documentation in xml to local file: ${cmd_name}_doc_api.xml
+    stdout : in text format to stdout
+    xml : in xml to local file: ${cmd_name}_doc_api.xml
+    html : in html to local file: ${cmd_name}_doc_api.html
   "
   return 1
 }
