@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 # ♾️ Dispatch standalone caller
 # Call me like dispatch myscript myfunction
-# TODO, not oeprational yet, this is still an example
+# TODO, not operational yet, this is still an example
 
-export g_dispatch_prohect_name=ART
+export g_dispatch_project_name=DISPATCH
 
 # Source lib
-gs_root_path=$(readlink -f "${BASH_SOURCE[0]}")
-gs_root_path=$(dirname "$gs_root_path")
-export gs_root_path
+: "${gs_root_path:=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")}"
 source "$gs_root_path"/script/lib_dispatch.sh
 
 script_path="$gs_root_path"/script

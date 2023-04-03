@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC1091  # Not following
-source "$gs_root_path/script/lib_dispatch.sh"
+: "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
+source "$gs_root_path/script/lib_bash.sh"
 
 
 start_test_function(){

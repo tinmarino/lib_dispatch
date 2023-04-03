@@ -3,15 +3,15 @@
 # Those used for printing errors in other utilities
 
 # Source test utilities
-  if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
-    export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
-    gs_root_path="$(dirname "$gs_root_path")"; gs_root_path="$(dirname "$gs_root_path")"
-    # shellcheck disable=SC1091  # Not following
-    source "$gs_root_path/test/lib_test.sh"
-  fi
+if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
+  export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
+  gs_root_path="$(dirname "$gs_root_path")"; gs_root_path="$(dirname "$gs_root_path")"
+  # shellcheck disable=SC1091  # Not following
+  source "$gs_root_path/test/lib_test.sh"
+fi
 
 
-  test_function_equal(){
+test_function_equal(){
   : "test me first as they all depend on me!"
   # -- 1: Integer success and stdout
   out=$(g_junit_file="" equal 0 0 'Test self' 2> /dev/null); equal 0 $? 'equal 0 0 => ret 0'
