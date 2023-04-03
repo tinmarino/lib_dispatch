@@ -1,5 +1,7 @@
 *.swp
 *_doc_api.xml
+*_doc_api.html
 .tags
 junit_last_result.xml
+junit_last_result.html
 sandbox/
