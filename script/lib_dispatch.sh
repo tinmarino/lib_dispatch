@@ -200,7 +200,7 @@ register_subcommand_from_gd_cmd(){
 
   # Join thread and append docstring -> dictionarie
   for cmd in "${!g_dispatch_d_cmd[@]}"; do
-    g_dispatch_d_fct[$cmd]=$(cat <&${d_fd[$cmd]})
+    g_dispatch_d_fct[$cmd]=$(cat <&"${d_fd[$cmd]}")
     ((i_fd++))
   done
 
@@ -257,7 +257,8 @@ call_fct_arg(){
   local subcmd_file=''  # Name of the file set if clling subcommand
 
   # Log helper for completion
-  # log "Dispatch:$#|$*! (complete=$g_dispatch_b_complete, help=$g_dispatch_b_help)"
+  log "Dispatch:$#|$*! (complete=$g_dispatch_b_complete, help=$g_dispatch_b_help, first=$gi_first_dispatch)"
+  #log "$(print_stack)"
 
   # Here I start, pre-parse
   if (( gi_first_dispatch < 1 )); then
@@ -348,7 +349,8 @@ call_fct_arg(){
     g_dispatch_a_dispach_args=("$@")
   fi
 
-  # Parse each user input argument
+
+  # Loop: Parse each user input argument
   declare -a a_fct_to_run=()
   for arg in "$@"; do
     shift  # So that $@ contains the rest of arguments
@@ -378,14 +380,17 @@ call_fct_arg(){
       fi
 
       if is_in_array "$target_fct" "${!g_dispatch_d_fct[@]}"; then
-        "$target_fct" "$@"; ((ret=$?))  # Run now so that it is set before calling target_fct
+        # Run now so that it is set before calling target_fct
+        "$target_fct" "$@"; ((ret=$?))
         ((i_to_skip+=ret))
+        # Completing case
         # If custom completion
         if ((g_dispatch_b_complete)) \
             && declare -F "__complete_${target_fct}" > /dev/null \
             && (( $# <= ret )); then
-          (( g_dispatch_b_complete = 2 ))
-          a_fct_to_run=("__complete_$target_fct")
+              # Commented out from time where I ran option even at complete
+            (( g_dispatch_b_complete = 2 ))
+            a_fct_to_run=("__complete_$target_fct")
           # Do not add default completion if custom
         fi
       fi
@@ -463,6 +468,7 @@ call_fct_arg(){
       return "$E_ARG"
     fi
   done
+
 
   # Call __at_init
   (( ${#args[@]} > 0 )) \
@@ -1667,8 +1673,10 @@ shell_execute(){
 
 
 # shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
+# shellcheck disable=SC2154  # Last_arg referenced but not asigned false +
 alias get_all_opt_alias='
-  local arg="" last_arg="";
+  local arg=""
+  local last_arg=""
   local -a a_out=();
   for arg; do
     case "$arg" in
@@ -1757,7 +1765,7 @@ bash_parallel(){
   # -- From: https://stackoverflow.com/questions/43230731/how-to-remove-the-last-line-from-a-variable-in-bash-or-sh
   # -- For bash > 4.2  Would just be: wait "${d_pid[$id]}"
   for id in "${!gd_bash_parallel_command[@]}"; do
-    local stdout=$(cat <&${d_fd[$id]})  # Wait for stdout
+    local stdout=$(cat <&"${d_fd[$id]}")  # Wait for stdout
     local last_line=${stdout##*$'\n'}
     stdout=${stdout%"$last_line"}
     # shellcheck disable=SC2034  # Unused
@@ -2215,7 +2223,7 @@ print_stack(){
       local argc=${BASH_ARGC[i_frame]}
       for ((j=0; j<argc; j++)); do
         (( k >= ${#BASH_ARGV[@]} )) && break
-        a_argv[$((argc-j))]=${BASH_ARGV[$((k++))]}
+        a_argv[argc-j]=${BASH_ARGV[k++]}
       done
     fi
     local argv=$(join_by ', ' "${a_argv[@]}")
@@ -2282,7 +2290,7 @@ abat(){
 
 log(){
   : 'Helper for debug (completion): Log to /tmp/irm_jenkins_log.log'
-  echo "$@" >> /tmp/irm_jenkins_log.log
+  echo "$@" >> /tmp/lib_dispatch.log
 }
 
 is_sourced(){
@@ -2384,31 +2392,6 @@ check_requirement(){
           fi
         done
         ;;
-
-      # Alma branch
-      alma_branch)
-        # Is environment variable present
-        if [[ -z "$BRANCH" ]]; then
-          pwarn "LibAlma: better specify \$BRANCH environment variable for AlmaSw"
-        else
-          pushd "$ALMA_SW" > /dev/null || res=1
-          branch_present=$(git rev-parse --abbrev-ref HEAD)
-          if [[ ! "$BRANCH" == "$branch_present" ]]; then
-            perr "Requirement: AlmaSw on branch $branch_present and wanted branch $BRANCH"
-            res=1
-          fi
-          popd > /dev/null || res=1
-        fi
-        ;;
-
-    # Alma Root
-    alma_root)
-      local filepath="/alma/ACS-current/ACSSW/config/.acs/.bash_profile.acs"
-      if [[ ! -f "$filepath" ]]; then
-        perr "Requirement: AlmaSw not compiled in /alma <= $filepath not present"
-        res=1
-      fi
-      ;;
 
     # Command
     command:*)
@@ -2766,7 +2749,7 @@ EOF
 
   # Prepend irm file path to PATH to ensure executing this one
   # shellcheck disable=SC2031  # PATH was modified in a subshell.
-  export PATH="$(dirname "$(dirname "$lib_alma")"):$PATH"
+  export PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")"):$PATH"
 
   unset lib_alma
 }
@@ -2780,8 +2763,8 @@ if is_sourced; then
   readarray -t g_dispatch_a_fct_to_hide < <(declare -F -p | cut -d " " -f 3)
 fi
 
-mm_doc_api(){
-  : '❓Helper to create recursive doc
+doc_api(){
+  : '99/ Helper to create recursive doc
   From: for the jenkins xml: https://bitbucket.sco.alma.cl/projects/ALMA/repos/adc-sw/browse/GIT/scripts/integrator/integrator.py (tk @camilo.saldias)
   '
   format=${1:-stdout}  # xml, stdout (maybe text in futur)
@@ -2894,6 +2877,16 @@ mm_doc_api(){
   fi
 
   # It consumes an argument
+  return 1
+}
+
+
+__complete_doc_api(){
+  # From GSiringo presentation: https://confluence.alma.cl/display/ESG/ALMA+Band+Integration
+  echo "
+    stdout : Print documentation in text format to stdout
+    xml : Print documentation in xml to local file: ${cmd_name}_doc_api.xml
+  "
   return 1
 }
 
