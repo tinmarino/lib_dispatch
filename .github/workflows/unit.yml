@@ -43,7 +43,7 @@ jobs:
           env
 
           echo "\n\n==> Hi"
-          ./script/lib_dispatch.sh hi
+          ./script/lib_dispatch.sh util hi
 
           echo "\n\n==> Unit"
           ./dispatch util unit_test

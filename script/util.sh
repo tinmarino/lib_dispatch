@@ -4,11 +4,12 @@
 
 set -u
 
-[[ ! -v gi_source_lib_dispatch ]] && {
+[[ ! -v gi_source_lib_bash ]] && {
   [[ ! -v gs_root_path ]] && { gs_root_path=$(readlink -f "${BASH_SOURCE[0]}"); gs_root_path=$(dirname "$gs_root_path"); gs_root_path=$(dirname "$gs_root_path"); }
   # shellcheck disable=SC1091  # Not following
-  source "$gs_root_path"/script/lib_dispatch.sh
+  source "$gs_root_path"/script/lib_bash.sh
 }
+: "${cfend:=''}" "${cend:=''}" "${cbold:=''}" "${cunderline:=''}" "${cred:=''}" "${cgreen:=''}" "${cyellow:=''}" "${cblue:=''}" "${cpurple:=''}"
 
 
 # Main options default
@@ -247,6 +248,209 @@ __complete_doc_api(){
   "
   return 1
 }
+
+
+hi(){
+  : '2/ 👋 Print: System information
+  -- And some jusdicious environment variables
+  -- Can be used as jenkins debug command, or for stamping logs
+  '
+  local -i i_indent="${3:-0}"
+  local s_indent="$(printf "%${i_indent}s" "")"
+  local tip=''
+  print_title "System Information" "" "$i_indent"
+
+  # Retrieve resource usage
+  # From: https://askubuntu.com/questions/941949/one-liner-to-show-cpu-ram-and-hdd-usage
+  local usage=''
+  if command -v top > /dev/null; then
+    usage+="CPU $(LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')%"
+  else
+    usage+="CPU ??"
+    tip+="- Install top command for CPU usage\n"
+  fi
+  if command -v free > /dev/null; then
+    usage+=" RAM $(free -m | awk '/Mem:/ { printf("%3.1f%%", $3/$2*100) }')"
+  else
+    usage+="  RAM ??"
+    tip+="- Install free command for RAM usage\n"
+  fi
+  if command -v df > /dev/null; then
+    usage+=" HDD $(df -h / | awk '/\// {print $(NF-1)}')"
+  else
+    usage+=" HDD ??"
+    tip+="- Install df command for HDD usage\n"
+  fi
+
+  # From: https://askubuntu.com/questions/988440/how-do-i-get-the-model-name-of-my-processor
+  local cpu_msg=''
+  if command -v lscpu > /dev/null; then
+    local cpu_model=$(lscpu | grep "Model name:" | sed -r 's/Model name:\s{1,}//g')
+    local cpu_core=$(lscpu | sed -nr '/^CPU\(s\)/ s/.*:\s*(.*)/\1/p')
+    local cpu_freq=$(lscpu | sed -nr '/^CPU max MHz/ s/.*:\s*(.*),.*/\1/p')
+    local cpu_arch=$(lscpu | sed -nr '/^Architecture/ s/.*:\s*(.*)/\1/p')
+    cpu_msg="$cpu_arch with $cpu_core cores at $cpu_freq [$cpu_model]"
+  else
+    cpu_msg="??"
+    tip+="- Install lscpu command for CPU info\n"
+  fi
+
+  # Craft full message
+  local msg="  ${s_indent}${cblue}Host ---- :$cend $USER@$HOSTNAME
+  ${s_indent}${cblue}Kernel -- :$cend $(uname -a)
+  ${s_indent}${cblue}OS Name - :$cend $(get_os_name)
+  ${s_indent}${cblue}Capability:$cend color:$(can_color && echo yes || echo no)
+  ${s_indent}${cblue}Date ---- :$cend $(date "+%Y-%m-%dT%H:%M:%S")
+  ${s_indent}${cblue}Cpu ----- :$cend $cpu_msg
+  ${s_indent}${cblue}Usage --- :$cend $usage
+  ${s_indent}${cblue}Process --- :$cend $$
+  "
+  echo -e "$msg" | sed -e 's/^[[:space:]]\{2\}//'
+
+  # TDDO reate specific hi for ART
+  a_env=(
+    "---  Github  ---"
+    GITHUB_WORKSPACE=
+    "---  Machine  ---"
+    OSTYPE
+    "---  Run  ---"
+  )
+  local v_env=''
+  for v_env in "${a_env[@]}"; do
+    # Separator
+    if [[ "$v_env" =~ - ]]; then
+      echo -e "${s_indent}${cpurple}$v_env$cend"
+
+    # Not defined
+    elif [[ ! -v "$v_env" ]]; then
+      echo -e "${s_indent}${cblue}$v_env=$cend"
+
+    # Key value
+    else
+      local value="${!v_env}"
+      [[ "$v_env" == RELEASE ]] \
+        && value="${cpurple}$value$cend"
+      echo -e "${s_indent}${cblue}$v_env=$cend\"$value\""
+    fi
+  done;
+
+  # Tip
+  if [[ -n "$tip" ]]; then
+    echo -e "\n${cpurple}TIP$cend"
+    echo -e "---$cend"
+    echo -e "$tip"
+  fi
+
+  echo
+  return 0
+}
+
+
+_shell(){
+  : '💻 Enter: the IRM shell
+    -- To get variable and functions as scripts have
+    -- Run shell with __rc local function content
+  '
+  # The old monk trick
+  # Avoid: bash: ./lib_alma.sh: No such file or directory
+  export source_lib_alma
+  # -- Avoid: bash: _parse_usage: line 16: ` -?(\[)+([a-zA-Z0-9?]))'
+  # --------- bash: error importing function definition for `_parse_usage'
+  unset _parse_usage
+
+  # Export all function
+  # shellcheck disable=SC2046  # Quote this to prevent word splitting.
+  declare -fx $(compgen -A function)
+
+  bash --noprofile --init-file <(
+    declare -f __rc | sed -n -e '$d; 3,$p'
+  ) -i
+  return $?
+}
+
+
+__rc(){
+  : 'Bashrc for the IRM shell'
+  # Source lib_alma
+  # shellcheck disable=SC1091  # Not following
+  [[ ! -v gi_source_lib_bash ]] && source "$gs_root_path/script/lib_bash.sh"
+
+  # Set completion
+  complete -C dispatch dispatch
+
+  # PS1
+  parse_git_branch() {
+    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/' 2> /dev/null;
+  }
+  export -f parse_git_branch
+  # (Green) Host: Cwd (git branch)
+  PS1='\[\e[32m\]\h: \w '
+  # Git Branch (yellow)
+  PS1+='\[\e[33m\]`parse_git_branch`'
+  # End color
+  PS1+='\[\e[0m\]'
+  # New line
+  PS1+='\n$ '
+
+  # Prepend sitename
+  [[ "$PS1" == "\\s-\\v\\\$ " ]] && PS1="[\u@\h \W]\\$ "
+  if [[ -e /alma/ste/etc/sitename ]]; then
+      sitename="$(cat /alma/ste/etc/sitename)"
+      case "$sitename" in
+          AP*)  prefix="\[\033[31m\]" ;;  # Red if APE
+          *)    prefix="\[\033[32m\]" ;;  # Green otherwise
+      esac
+      prefix+="${sitename}:\[\033[0m\] "
+      PS1="${prefix}${PS1#"$prefix"}"
+      unset prefix
+  fi
+  export PS1
+
+  # Trap exit
+  __at_exit(){
+    echo "Bye from IRM SHELL"
+  }
+  trap __at_exit EXIT
+
+  # Hi
+  cat << 'EOF'
+    WELCOME TO THE GREAT
+        ,-.
+       / \  `.  __..-,O
+      :   \ --''_..-'.'
+      |    . .-' `. '.
+      :     .     .`.'
+       \     `.  /  ..
+        \      `.   ' .
+         `,       `.   \
+        ,|,`.        `-.\
+       '.||  ``-...__..-`
+        |  |
+        |__|
+        /||\
+       //||\\
+      // || \\
+   __//__||__\\__
+  '--------------' SSt
+EOF
+  print_unindent "${cgreen}IRM SHELL$cend
+    Use: copy paste commands from irm_jenkins
+
+    Example:
+    echo \$RELEASE
+    irm alma hi
+    run tar -czf dashboard-frontend-angular.tgz -C angularapp .
+    compgen -A function
+  "
+
+  # Prepend irm file path to PATH to ensure executing this one
+  # shellcheck disable=SC2031  # PATH was modified in a subshell.
+  export PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")"):$PATH"
+
+  unset lib_alma
+}
+
+
 
 
 __at_init(){ print_script_start "$@"; }
