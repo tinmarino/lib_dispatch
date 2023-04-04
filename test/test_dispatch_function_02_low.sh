@@ -172,13 +172,13 @@ test_function_user_at_host(){
   out=$(USER=user HOSTNAME=hostname user_at_host); equal 0 $? 'user_at_host never fails'
   equal 'user@hostname' "$out" 'user_at_host 2 var'
 
-  out=$(unset USER; HOSTNAME=hostname user_at_host); equal 0 $? 'user_at_host never fails'
+  out=$(unset USER USERNAME; HOSTNAME=hostname user_at_host); equal 0 $? 'user_at_host never fails'
   equal 'hostname' "$out" 'user_at_host 1 var: host'
 
   out=$(unset HOSTNAME; USER=user user_at_host); equal 0 $? 'user_at_host never fails'
   equal 'user@localhost' "$out" 'user_at_host 1 var: user'
 
-  out=$(unset HOSTNAME; unset USER; user_at_host); equal 0 $? 'user_at_host never fails'
+  out=$(unset HOSTNAME USER USERNAME; user_at_host); equal 0 $? 'user_at_host never fails'
   equal 'localhost' "$out" 'user_at_host 0 var'
 
   return "$g_dispatch_i_res"

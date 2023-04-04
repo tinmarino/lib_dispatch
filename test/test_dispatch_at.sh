@@ -75,14 +75,14 @@ start_test_function "dispatch --at (via dispatch)"
   equal 0 $? "dispatch --at localhost example succeed" \
     --desc "Command should return success"
 
-  bash_timeout 1 "$gs_root_path"/dispatch --at "$USER@localhost" example fail &> /dev/null
-  equal 42 $? "dispatch --at $USER@localhost example fail" \
+  bash_timeout 1 "$gs_root_path"/dispatch --at "${USER:-$USERNAME}@localhost" example fail &> /dev/null
+  equal 42 $? "dispatch --at ${USER:-$USERNAME}@localhost example fail" \
     --desc "Command should return my failure"
 
-  bash_timeout 1 "$gs_root_path"/dispatch --at "$USER@$HOSTNAME" example fail &> /dev/null
-  equal 42 $? "dispatch --at $USER@$HOSTNAME example fail" \
+  bash_timeout 1 "$gs_root_path"/dispatch --at "${USER:-$USERNAME}@$HOSTNAME" example fail &> /dev/null
+  equal 42 $? "dispatch --at ${USER:-$USERNAME}@$HOSTNAME example fail" \
     --desc "Command should return my failure (at USER@HOSTNAME)" \
-    --tip "Run: 'ssh-copy-id $USER@$HOSTNAME' <= You do not want to type password everytime" \
+    --tip "Run: 'ssh-copy-id ${USER:-$USERNAME}@$HOSTNAME' <= You do not want to type password everytime" \
     --tip "Run: 'vim /etc/hostname /etc/hosts'"
 
   # Unreachable target computer

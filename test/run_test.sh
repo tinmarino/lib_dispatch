@@ -6,6 +6,10 @@ gs_root_path="$(dirname "$gs_root_path")"
 # shellcheck disable=SC1091  # Not following
 source "$gs_root_path/test/lib_test.sh"
 
+# Declate the report fd
+# g: global, i: interger, x: export
+declare -gix gi_summay_fd=0
+
 main(){
   : "Check dispatch project"
   # TODO warn if remote
@@ -67,29 +71,26 @@ main(){
   # Get 'dispatch' in path
   PATH="$gs_root_path:$PATH"
   
-  if ((b_async)); then
-    # Run process async
-    # Create a summary fifo: child -> parent
-    # From: https://superuser.com/questions/184307/bash-create-anonymous-fifo
-    # start a background pipeline with two processes running forever
-    tail -f /dev/null | tail -f /dev/null &
-    # save the process ids
-    local PID2=$!
-    local PID1=$(jobs -p %+)
-    # hijack the pipe's file descriptors using procfs
-    # l-wx------ 1 mtourneb mtourneb 64 ene  6 00:46 42 -> pipe:[4317132]
-    # lr-x------ 1 mtourneb mtourneb 64 ene  6 00:46 43 -> pipe:[4317132]
-    # 42 for Write
-    # TODO remove 42 hardcode
-    exec 42>/proc/"$PID1"/fd/1
-    # 43 for Read
-    exec 43</proc/"$PID2"/fd/0
-    
-    # kill the background processes we no longer need
-    # (using disown suppresses the 'Terminated' message)
-    disown "$PID2"
-    kill "$PID1" "$PID2"
-  fi
+  # Create a summary fifo: child -> parent
+  # From: https://superuser.com/questions/184307/bash-create-anonymous-fifo
+  # start a background pipeline with two processes running forever
+  tail -f /dev/null | tail -f /dev/null &
+  # save the process ids
+  local PID2=$!
+  local PID1=$(jobs -p %+)
+  # hijack the pipe's file descriptors using procfs
+  # l-wx------ 1 mtourneb mtourneb 64 ene  6 00:46 42 -> pipe:[4317132]
+  # lr-x------ 1 mtourneb mtourneb 64 ene  6 00:46 43 -> pipe:[4317132]
+  # 42 for Write
+  # TODO remove 42 hardcode
+  exec 42>/proc/"$PID1"/fd/1
+  # 43 for Read
+  exec 43</proc/"$PID2"/fd/0
+  
+  # kill the background processes we no longer need
+  # (using disown suppresses the 'Terminated' message)
+  disown "$PID2"
+  kill "$PID1" "$PID2"
 
   # Say Hi
   local commit="$(git -C "$gs_root_path" log -n 1 --pretty=format:"%C(yellow)%h %ad%Cred%d %Creset%s%Cblue [%cn]" --decorate --date=short 2> /dev/null)"
@@ -160,22 +161,22 @@ main(){
   if ((b_async)); then
     ## Wait for all jobs
     wait_pid_array "${a_pid[@]}"; ((res|=$?))
-
-    # Lock Grep interesting output (error and warning)
-    local s_error=$(cat <&43)
-    if [[ -n "$s_error" ]]; then
-      # Echo Tail
-      >&2 echo -e "\n====================================="
-      >&2 echo -e "$s_error"
-    fi
-    
-    # Close fd
-    exec 43>&-
-
-    # Safely set status if grep error,
-    # for bash-4.2 that has trouble to get status
-    (( res == 0 )) && [[ -n "$s_error" ]] && res=1
   fi
+
+  # Lock Grep interesting output (error and warning)
+  local s_error=$(cat <&43)
+  if [[ -n "$s_error" ]]; then
+    # Echo Tail
+    >&2 echo -e "\n====================================="
+    >&2 echo -e "$s_error"
+  fi
+  
+  # Close fd
+  exec 43>&-
+
+  # Safely set status if grep error,
+  # for bash-4.2 that has trouble to get status
+  (( res == 0 )) && [[ -n "$s_error" ]] && res=1
 
   # Calcultate time spent
   if [[ osx != $(get_os) ]]; then

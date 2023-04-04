@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091  # Not following
 : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
-source "$gs_root_path/script/lib_bash.sh"
+source "$gs_root_path/script/lib_misc.sh"
 
 : "${cpurple:=}" "${cend:=}"
 
@@ -44,7 +44,6 @@ system_timeout(){
 }
 
 
-
 art_parallel_suite(){
   : 'Namespace fcts'
   local tmp_bank="$g_tmp_root/$1"
@@ -71,6 +70,12 @@ art_parallel_suite(){
 
   bash_parallel
   return $?
+}
+
+
+depend(){
+  pinfo "Depend is not implemented already"
+  pinfo "-- But this would depends on $*"
 }
 
 

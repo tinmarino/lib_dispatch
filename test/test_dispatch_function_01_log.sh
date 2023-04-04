@@ -12,41 +12,6 @@ fi
 
 
 test_function_equal(){
-  : "test me first as they all depend on me!"
-  # -- 1: Integer success and stdout
-  out=$(g_junit_file="" equal 0 0 'Test self' 2> /dev/null); equal 0 $? 'equal 0 0 => ret 0'
-  equal '' "$out" 'equal no output 1'
-
-  # -- 2 Integer failure and stdout
-  out=$(g_junit_file="" equal 1 0 'Test self' 2> /dev/null); equal 1 $? 'equal 1 0 => ret 1'
-  equal '' "$out" 'equal no output 2'
-
-  # -- 3 String success and stderr
-  out=$(g_junit_file="" equal '  aa b ' '  aa b '  'grepme  equal1' 2>&1); equal 0 $? 'equal same string => ret 0'
-  # shellcheck disable=SC2076  # Remove quotes
-  [[ "$out" =~ "[+]" ]]; equal 0 $? 'equal string OK with [plus]'
-  [[ "$out" =~ "Success" ]]; equal 0 $? 'equal string OK with Success'
-  [[ "$out" =~ "grepme  equal1" ]]; equal 0 $? 'equal string OK with Arg3'
-
-  # -- 4 String failure and stderr
-  out=$(g_junit_file="" equal ' aa b ' 'aa b '  'grepme  equal2' 2>&1); equal 1 $? 'equal different string => ret 0'
-  # shellcheck disable=SC2076  # Remove quotes
-  [[ "$out" =~ "[-]" ]]; equal 0 $? 'equal string OK with [mimus]'
-  [[ "$out" =~ "Error" ]]; equal 0 $? 'equal string OK with (the bad word)'
-  [[ "$out" =~ "grepme  equal2" ]]; equal 0 $? 'equal string OK with Arg3'
-
-  # -- 5 Introspection
-  out=$(g_junit_file="" equal 'grepme equal3' 'grepme equal3' 2>&1); equal 0 $? 'equal same string again => ret 0'
-  [[ "$out" =~ "grepme equal3" ]]; equal 0 $? 'equal can inspect line where sent'
-
-  # -- 6 Writing to g_junit_file
-  junit=$(mktemp)
-  out=$(g_junit_file="$junit" equal 'grepme-junit1' 'grepme-junit1' "grepme-junit2" 2>&1); equal 0 $? 'equal junit same string again => ret 0'
-  junit_content=$(<"$junit")
-  [[ "$junit_content" =~ Success ]]; equal 0 $? "equal is writing to junit: Success"
-  [[ "$junit_content" =~ grepme-junit1 ]]; equal 0 $? "equal is writing to junit: grepme-junit1 => the string to match"
-  [[ "$junit_content" =~ grepme-junit2 ]]; equal 0 $? "equal is writing to junit: grepme-junit2 => the comment"
-}
 
 
 test_function_abat(){

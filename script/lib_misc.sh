@@ -182,8 +182,9 @@ user_at_host(){
   : 'Print USER@HOSTNAME, tested'
   local user_at_host=localhost
   local user=${USER:-$USERNAME}
+  [[ -n "$user" ]] && user+=@
   [[ -v HOSTNAME ]] && [[ -n "$HOSTNAME" ]] && user_at_host=$HOSTNAME
-  user_at_host="$user@$user_at_host"
+  user_at_host="${user}$user_at_host"
   echo "$user_at_host"
 }
 
@@ -724,10 +725,34 @@ fcp(){
   eval "${_/$1/$2}"
 }
 
+
+#  : 'Create a filedescriptor attached to no file
+#    Let the kernel manage it
+#    Called by: bash_sleep
+#    TODO test
+#  '
+# Cannot put in function as getting its output creates a subshell
+# shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
+# shellcheck disable=SC2154  # Last_arg referenced but not asigned false +
+alias get_dummy_fd_alias='
+  local -i fd=0
+  if [[ "$OSTYPE" == linux* ]]; then
+    exec {fd}<> <(:) || return 2
+  else
+    local fifo
+    fifo=$(mktemp -u) || return 11
+    mkfifo -m 700 "$fifo" || return 12
+    exec {fd}<>"$fifo" || return 13
+    rm "$fifo" || return 14
+  fi
+'
+
+
 bash_sleep(){
   : 'Sleep arg1 seconds. Like the sleep command but pure bash
   Arg1: Sleep time <float as string with dot> (ex: 2.3)
   Global: gfd_bash_sleep  # Global file descripor to lock on
+  Depends on: get_dummy_fd
   Ex: bash_sleep 0.03
   From: https://github.com/dylanaraps/pure-bash-bible#use-read-as-an-alternative-to-the-sleep-command
   From: https://blog.dhampir.no/content/sleeping-without-a-subprocess-in-bash-and-how-to-sleep-forever
@@ -743,16 +768,9 @@ bash_sleep(){
 
   # Open a file descriptor to wait on
   if [[ ! -v gfd_bash_sleep || -z "$gfd_bash_sleep" || ! "$gfd_bash_sleep" =~ ^[0-9]+$ ]]; then
-    if [[ "$OSTYPE" == linux* ]]; then
-      exec {gfd_bash_sleep}<> <(:)
-    else
-      # The above trick is not suported in windows, maybe nor mac
-      local fifo
-      fifo=$(mktemp -u)
-      mkfifo -m 700 "$fifo"
-      exec {gfd_bash_sleep}<>"$fifo"
-      rm "$fifo"
-    fi
+    get_dummy_fd_alias
+    # shellcheck disable=SC2154  # fd is referenced but not assigned
+    gfd_bash_sleep=$fd
   fi
 
   # Wait finally
@@ -1073,4 +1091,4 @@ fi
 
 # In order to single source as ssh (see --at, ICT-18899)
 # shellcheck disable=SC2034
-gi_source_lib_bash=1
+gi_source_lib_misc=1

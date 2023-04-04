@@ -4,10 +4,10 @@
 
 set -u
 
-[[ ! -v gi_source_lib_bash ]] && {
+[[ ! -v gi_source_lib_misc ]] && {
   [[ ! -v gs_root_path ]] && { gs_root_path=$(readlink -f "${BASH_SOURCE[0]}"); gs_root_path=$(dirname "$gs_root_path"); gs_root_path=$(dirname "$gs_root_path"); }
   # shellcheck disable=SC1091  # Not following
-  source "$gs_root_path"/script/lib_bash.sh
+  source "$gs_root_path"/script/lib_misc.sh
 }
 : "${cfend:=''}" "${cend:=''}" "${cbold:=''}" "${cunderline:=''}" "${cred:=''}" "${cgreen:=''}" "${cyellow:=''}" "${cblue:=''}" "${cpurple:=''}"
 
@@ -373,7 +373,7 @@ __rc(){
   : 'Bashrc for the IRM shell'
   # Source lib_alma
   # shellcheck disable=SC1091  # Not following
-  [[ ! -v gi_source_lib_bash ]] && source "$gs_root_path/script/lib_bash.sh"
+  [[ ! -v gi_source_lib_misc ]] && source "$gs_root_path/script/lib_misc.sh"
 
   # Set completion
   complete -C dispatch dispatch
@@ -453,6 +453,50 @@ EOF
 }
 
 
+new_test_file(){
+  # Check in: one arg
+  if (( $# < 1 )); then
+    perr "function new_test_file must receive one argument, the filename" \
+      "Tip: new_test_file unit_is_in_array"
+    return "$E_REQ"
+  fi
+
+  # Parse arg in
+  local arg=$1
+  
+  # Create filename and funcname
+  local funcname=$arg
+  if [[ ! "$funcname" =~ ^unit_ ]]; then
+    funcname=${funcname##unit_}
+  fi
+  if [[ ! "$funcname" =~ ^function_ ]]; then
+    funcname="function_$funcname"
+  fi
+  local filename=$arg
+  if [[ ! "$filename" =~ ^test_ ]]; then
+    filename="test_$filename"
+  fi
+  if [[ ! "$filename" =~ \.sh$ ]]; then
+    filename="$filename.sh"
+  fi
+
+  # Clause: filename must not exist
+  local path="$gs_root_path/test/$filename"
+  if [[ -e "$path" ]]; then
+    perr "new_test_file: file $path already exist, please create a new test file or delete this file" \
+      "Tip: new_test_file unit_not_already_exisiting"
+    return "$E_REQ"
+  fi
+
+  # Craft content
+  local content=$(<"$gs_root_path"/res/test_template.sh)
+  content=${content//placehodler_funcname/$funcname/}
+  content=${content//placehodler_filename/$filename/}
+  
+  # Write file
+  echo "$content" > "$path"
+  chmod +x "$path"
+}
 
 
 __at_init(){ print_script_start "$@"; }

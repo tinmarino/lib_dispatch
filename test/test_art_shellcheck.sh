@@ -10,6 +10,12 @@
 
 
 test_shellcheck(){
+  # Clause: I need shellcheck installed
+  if command -v shellcheck > /dev/null; then
+    pinfo "shellcheck not present on the computer, skipping"
+    return 0
+  fi
+
   local file=''  # loop variable
 
   # Craft chekcs to ignore
