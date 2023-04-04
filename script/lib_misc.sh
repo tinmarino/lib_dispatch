@@ -115,6 +115,7 @@ read_file_as_array(){
     -- Note: if "-" or not existing, read from stdin
     Arg1: (out) array name
     Arg2: (in)  file name
+    Depends on: perr
     Ex: read_file_as_array array <(echo -e "a\nb b\nccc cc")
     Ex2: set +m; shopt -p lastpipe; echo -e "a\nb b\nccc cc" | read_file_as_array array
   '
@@ -143,10 +144,18 @@ read_file_as_array(){
 
 
 print_unindent(){
-  : 'Remove first line indentation to all lines of string (arg1), tested'
+  : 'Remove first line indentation to all lines of string (arg1), tested
+    Depends on: perr
+    Requires awk
+  '
   local in=$1
   if [[ ! -t 0 ]] && { (( $# == 0 )) || [[ "-" == "$in" ]]; }; then
     in=$(</dev/stdin)
+  fi
+
+  if ! command -v awk > /dev/null; then
+    perr "print_unindent function requries awk command" \
+      "Tip: apt install gawk"
   fi
 
   awk '{
@@ -163,9 +172,10 @@ print_unindent(){
 
 wait_pid_array(){
   : 'Wait for all pid in array in, TODO refactor async API
+    Return: 0 <= All OK
+    Standalone
     From: https://stackoverflow.com/a/43776775/2544873
     From: https://stackoverflow.com/a/356154/2544873  # also
-    Return: 0 <= All OK
   '
   local -i res=0 ret=0 pid=0
   for pid; do
@@ -179,7 +189,9 @@ wait_pid_array(){
 
 
 user_at_host(){
-  : 'Print USER@HOSTNAME, tested'
+  : 'Print USER@HOSTNAME, tested
+    Standalone
+  '
   local user_at_host=localhost
   local user=${USER:-$USERNAME}
   [[ -n "$user" ]] && user+=@
@@ -193,6 +205,7 @@ ask_confirmation(){
   : 'Print out message and wait for yes/no user confirmation, tested
     Arg1: optional string message of what to confirm
     Return: 0 -> continue: 1 -> user did not confirm
+    Standalone
   '
   (( ${#@} > 1 )) && >&2 echo -e "$1"
   >&2 read -p "Do you confirm (y or n)? " -n 1 -r
@@ -207,6 +220,7 @@ ask_confirmation(){
 
 trim(){
   : 'Trim leading and trailing space, tested
+    Standalone
     From: https://github.com/dylanaraps/pure-bash-bible
     Ex: trim "  a b " -> "a b"
   '
@@ -229,6 +243,8 @@ remove_newline(){
 
 columnize(){
   : 'Pipe util Format inteligently columns but with more user input than columns command, tested
+    Depends on: perr get_opt
+    Requires: awk
     Arg --col: coma separated list of column size len except the last column. Defaults to 20,30,30,30...
     Arg --ofs --ifs --fs: Output, Input, and generic Field Separator. The generic sets OFS and IFS. These defined how celles are split or join
   '
@@ -243,6 +259,12 @@ columnize(){
 
   # Get in: Columns
   local col=$(get_opt --col "$@")
+
+  # Clause requries awk
+  if ! command -v awk > /dev/null; then
+    perr "columnize function requires awk command" \
+      "Tip: apt install gawk"
+  fi
 
   # Ok Go
   awk -F "$ifs" -v col="$col" -v ofs="$ofs" '
@@ -426,11 +448,15 @@ ping_all(){
 # 2.2/ Pipe Utils
 
 pipe_one_line(){
-  : 'Pipe Util: The "backslash R" trick: Only print stdout last line updating itself, tested'
+  : 'Pipe Util: The "backslash R" trick: Only print stdout last line updating itself, tested
+    Standalone
+  '
   {
     # turn of automatic margins
     # see man terminfo
-    [[ -v TERM && -n "$TERM" && ! -v GITHUB_ACTION ]] && tput rmam
+    [[ -v TERM && -n "$TERM" && ! -v GITHUB_ACTION ]] \
+      && command -v tput > /dev/null \
+      && tput rmam
 
     # The or -n line trick is to cnsider EOF is only 1 line
     # -- See: https://stackoverflow.com/a/12919766/2544873
@@ -438,14 +464,23 @@ pipe_one_line(){
       printf "\r\e[K%s" "$line"
     done < "${1:-/dev/stdin}"
 
-    [[ -v TERM && -n "$TERM" && ! -v GITHUB_ACTION ]] && tput smam
+    [[ -v TERM && -n "$TERM" && ! -v GITHUB_ACTION ]] \
+      && command -v tput > /dev/null \
+      && tput smam
   }
   return 0
 }
 
 
 pipe_10(){
-  : 'Pipe util: Print first 10 lines of stdin and 1/100 lines and last 10 lines, tested'
+  : 'Pipe util: Print first 10 lines of stdin and 1/100 lines and last 10 lines, tested
+    Depends on: perr
+    Requires: awk command
+  '
+  if ! command -v awk > /dev/null; then
+    perr "pipe_10 function requires awk command" \
+      "Tip: apt install gawk"
+  fi
   <"${1:-/dev/stdin}" awk '
     { a[NR]=$0 }  # Backup all lines, you never know when it ends
     NR <= i_head { print }  # If in head: print
@@ -622,6 +657,9 @@ bash_parallel(){
 }
 
 
+# Depends on nothing, not even logger
+# No undesired side, efect
+# A jewel
 # shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
 # shellcheck disable=SC2154  # Last_arg referenced but not asigned false +
 alias get_all_opt_alias='
@@ -648,6 +686,7 @@ get_opt(){
   : 'Get named parameter, initial function, tested
     -- Print long argument <arg1:string> options from paramters following arguments
     -- In case of duplication, the last defined option wins
+    Depends on: perr
     Ex: get_opt --param arg1 arg2 --param arg3 arg4 --param2 arg5 # Out: arg3 arg4
   '
   local a_out=()
@@ -689,7 +728,9 @@ get_opt(){
 
 
 print_args(){
-  : 'Helper for debug (parameters): Print input arguments, one per line, tested'
+  : 'Helper for debug (parameters): Print input arguments, one per line, tested
+    Standalone
+  '
   local -i i=1; local arg=''
   for arg; do echo "$((i++))/ $arg"; done
 }
@@ -869,6 +910,156 @@ bash_timeout(){
 ###################################
 # 0/ Log and equal
 
+pok(){
+  : 'Print success message (args) to stderr'
+  __phelper "$cgreen" "[S] Succeed: " "$@"
+}
+
+
+pinfo(){
+  : 'Print info message (args) to stderr'
+  __phelper "$cblue" "[I] Info: " "$@"
+}
+
+
+pwarn(){
+  : 'Print info message (args) to stderr'
+  __phelper "$cyellow" "[W] Warning: " "$@"
+}
+
+
+perr(){
+  : 'Print args, red to stderr plus a stack trace, tested
+    Use: pstree command if present
+  '
+
+  # Hi: Print error
+  __phelper "$cred" "[E] Error: " "$@"
+
+  # Print process Tree
+  if command -v pstree &> /dev/null; then
+    # From: https://askubuntu.com/a/1012277
+    local tree=$(pstree -pal -s $$)
+    [[ -n "$tree" ]] && >&2 printf "\n${cred}Process tree:${cend} (parent first)\n%s\n" "$tree"
+  fi
+
+  # Print stack
+  local stack="$(print_stack 2)"
+  [[ -n "$stack" ]] && >&2 printf "\n${cred}Stack trace:${cend} (last call first)\n%s\n" "$stack"
+
+  # Bye: Print error, again
+  __phelper
+  __phelper "$cred" "[E] Error: " "$@"
+}
+
+
+__phelper(){
+  : 'Internal helper: used to print info, warning or error, ToTest
+    Standalone
+    arg1: Color
+    arg2: Prefix
+    arg[2:]: Message lines
+  '
+  # Parse in
+  local color=${1:-} prefix=${2:-} color_end=''
+  local -a a_line=("${@:3}")
+
+  # Append prefix to first line
+  a_line[0]="$prefix${a_line[0]:-}"
+
+  # Add end color
+  [[ -n "$color" ]] && color_end=$cend
+
+  # Say it!
+  local oifs="$IFS"; IFS='';
+  >&2 printf "${color}%b$color_end\n" "${a_line[@]}"
+  IFS="$oifs"
+}
+
+
+print_stack(){
+  : 'Print current stack trace, tested
+    Depends on: join_by
+    From: https://stackoverflow.com/a/2990533/254487
+  '
+  local -i i_init=${1:-0}  # Frame number where I'll start
+  local -i i_end=${2:-10}  # Frame number where I'll stop
+  local -i i_indent=-4  # Indentation size
+  local -i i_lnum=5  # Number of lines for the first frame
+  local -i b_first_loop=1  # Are we in first loop
+  local -i j=0 k=0 i_frame=0
+
+  # Warn can see more
+  shopt -q extdebug || echo "# Note: run 'shopt -s extdebug' to see call arguments"
+  # For each frame
+  for i_frame in "${!FUNCNAME[@]}"; do
+    # Clause fo not work after stack size
+    [[ ! -v BASH_LINENO ]] && break
+    (( i_frame > ${#BASH_LINENO[@]} )) && break
+    (( i_frame > ${#FUNCNAME[@]} )) && break
+    (( i_frame > i_end )) && break
+
+    ((i_indent+=2))
+
+    # Get lines number of code to print
+    local line_nr="${BASH_LINENO[$i_frame-1]}"
+    if (( i_frame >= i_init )) && (( b_first_loop )); then
+      # Take the lnum lines above for the first call in stack
+      line_nr="$(( ret = line_nr - i_lnum, ret > 1 ? ret : 1 )),$line_nr"
+      b_first_loop=0
+    fi
+
+    # Inspect
+    local pad="$(printf "%${i_indent}s" "")"
+    local fct="${FUNCNAME[$i_frame]:-main}"
+    local file="${BASH_SOURCE[$i_frame]:-terminal}"
+    local line=""
+    ((line_nr != 0)) && {
+      line="$({ [[ -r "$file" ]] && cat "$file" || echo "# No line info"; } \
+      | sed -nE "${line_nr}s/^ */$pad/gp")"
+    }
+
+    # Inspect argument
+    local -a a_argv=()
+    if shopt -q extdebug; then
+      local argc=${BASH_ARGC[i_frame]}
+      for ((j=0; j<argc; j++)); do
+        (( k >= ${#BASH_ARGV[@]} )) && break
+        a_argv[argc-j]=${BASH_ARGV[k++]}
+      done
+    fi
+    local argv=$(join_by ', ' "${a_argv[@]}")
+
+    if (( i_frame >= i_init )); then
+      # Craft message
+      local msg="in "
+      msg+="${cblue}Function:$cend $fct($argv), "
+      msg+="${cblue}File:$cend $file, "
+      msg+="${cblue}Line:$cend $line_nr\n"
+      #msg+="${cblue}Frame:$cend $i_frame\n"
+
+      # Print
+      echo -e "$cyellow$line$cend"
+      printf "%${i_indent}s" ""
+      printf "        %b\n" "$msg"
+    fi
+  done
+}
+
+
+join_by(){
+  : 'Join array string elements (args[2:]) with (by) a delimiter (arg1)
+    Standalone
+    Used by: print_stack
+    From: https://stackoverflow.com/a/17841619/2544873
+    Ex: join_by , a b c => a,b,c
+  '
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
 
 declare -gi g_dispatch_i_res=0  # Global response for the equal
 equal(){
@@ -891,6 +1082,7 @@ equal(){
       --tip   => tip to fix if test fails
       --not   => reverse the condition (no argument)
       --quiet => only print if fails (no argument)
+      --fix   => message only printed if failed
 
     Return: 0 if OK.
   '
@@ -1026,7 +1218,8 @@ equal(){
     # Append to summary fd
     if [[ -v gi_summary_write_fd ]] && (( gi_summary_write_fd != 0)); then
       DISPATCH_EQUAL_ERR+="$stdout_line"
-      trap "echo -e \"\$DISPATCH_EQUAL_ERR\" >&{gi_summary_write_fd}" EXIT
+      # shellcheck disable=SC2064  # Use single quotes, I know what I do
+      trap "echo -e \"\$DISPATCH_EQUAL_ERR\" >&$gi_summary_write_fd" EXIT
     fi
   fi
   

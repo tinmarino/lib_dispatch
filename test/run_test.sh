@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2059  # Don't use variables in the printf format string
+
 export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
 gs_root_path="$(dirname "$gs_root_path")"
 gs_root_path="$(dirname "$gs_root_path")"
@@ -66,8 +68,10 @@ main(){
       # local a_test_file=("${@/#/$gs_root_path/test/}")
       [[ "$test_file" != test_* ]] && test_file="test_$test_file"
       [[ "$test_file" != *.sh ]] && test_file="$test_file.sh"
-      test_file="$gs_root_path/test/$test_file"
-      a_test_file+=("$test_file")
+      # Voluntarily expand globs
+      # shellcheck disable=SC2206  # Quote to prevent word splitting/globbing or use readarray
+      local -a a_tmp_test_file=("$gs_root_path"/test/$test_file)
+      a_test_file+=("${a_tmp_test_file[@]}")
     done
   fi
 
@@ -149,6 +153,7 @@ main(){
     # Go Sync
     if ((! b_async)); then
       "$test_file"; ret=$?
+      d_status[$key]=$ret
       >&2 echo -e "Returned: $ret\n"
       ((res|=ret))
      
@@ -188,19 +193,19 @@ main(){
     local -i pid=0 ret=0
     for key in "${!d_pid[@]}"; do
       pid=${d_pid[$key]}
-        wait "$pid" &> /dev/null; ret=$?
-        d_status[$key]=$ret
-        (( 0 == ret )) && continue
-        (( 127 == ret )) && break
-        ((res |= ret ))
-      done
-    fi
+      wait "$pid" &> /dev/null; ret=$?
+      d_status[$key]=$ret
+      (( 0 == ret )) && continue
+      (( 127 == ret )) && break
+      ((res |= ret ))
+    done
+  fi
 
   # Lock Grep interesting output (error and warning)
   local err_summary=$(cat <&"$gi_summary_read_fd")
   if [[ -n "$err_summary" ]]; then
     # Echo Tail
-    >&2 echo -e "\n====================================="
+    >&2 echo -e "\nError summary\n====================================="
     >&2 echo -e "$err_summary"
   fi
   
@@ -213,6 +218,17 @@ main(){
 
   # Write file summary
   echo -e "\n\nFile Summary\n============================="
+  local -a a_col=(30 20 3)
+  local format1="| %-${a_col[0]}s | %-${a_col[1]}s | %-${a_col[2]}s |\n"
+  # Each cell take 3, the last 1
+  # 25 + 20 + 3 + 3 * 3 + 1 = 5
+  local br=$(printf -- '-%.0s' {1..63}; echo)
+  echo "$br"
+  printf "$format1" "File" "Result" "Sts"
+  printf "$format1" \
+    "$(printf -- '-%.0s' {1..30})" \
+    "$(printf -- '-%.0s' {1..20})" \
+    "$(printf -- '-%.0s' {1..3})"
   for key in "${!d_test_file[@]}"; do
     [[ async == "$key" ]] && continue
     local color='' tail=''
@@ -224,10 +240,15 @@ main(){
       color="$cred"
       tail="ERROR"
     fi
-    printf '%-40s %s\n' "$color* $key" "status $tail"
+  # 12345678901234567890
+  # E[38;5;124m
+  local -i color_len=$(( ${#color} + ${#cend} ))
+    local format2="| %-$((a_col[0] + color_len))s | %-$((a_col[1] + color_len))s | %-$((a_col[2] + color_len))s |\n"
+    printf "$format2" "$color$key$cend" "$color$tail$cend" "$color$status$cend"
   done
-  echo -e "=============================\n"
+  echo "$br"
 
+  echo -e "\nGoodbye\n============================="
   # Calcultate time spent
   if [[ osx != $(get_os) ]]; then
     local -i end_time=$(date +%s%N)
@@ -247,7 +268,7 @@ main(){
   (( res == 0 )) \
     && msg+="${cgreen}[+] Main Success:" \
     || msg+="${cred}[-] Main Error:"
-  msg+="'Dispatch check self $*' returned with $res status in $script_time$cend"
+  msg+="'Dispatch util unit_test $*' returned with $res status in $script_time$cend"
 
   # Say Bye
   >&2 echo -e "$msg"

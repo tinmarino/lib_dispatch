@@ -30,8 +30,8 @@ test_function_unit_misc_print_stack(){
   # -- 1: Normal use
   out=$(fct1 a "b c" d)
   equal 0 $? "print_stack with function name"
-  [[ "$out" =~ fct2.*fct1 ]]; equal 0 $? "print_stack the stack appears with desired function in desired order"
-  [[ "$out" =~ lib_dispatch ]]; equal 0 $? "print_stack the stack contains 'test_dispatch_function.sh' name of the current file"
+  [[ "$out" =~ fct2.*fct1 ]]; equal 0 $? "print_stack: the stack should appear with desired function in desired order"
+  [[ "$out" == *"${BASH_SOURCE[0]##*/}"* ]]; equal 0 $? "print_stack: the stack should contain string '${BASH_SOURCE[0]##*/}' name of the current test file"
 
   # -- 2: With argument trace
   out=$(shopt -s extdebug; fct1 grepme-argument a "b c" d)

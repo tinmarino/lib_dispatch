@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit test for placeholder_funcname
+# Unit test for function_unit_misc_bash_parallel
 
 # Source test utilities
 if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
@@ -12,16 +12,16 @@ fi
 : "${g_dispatch_i_res:=0}"
 
 # Declare dependencies
-depend perr
+depend
 
 
-test_placeholder_funcname(){
-  : 'Test placeholder_funcname'
-  equal 0 0 "TODO implement test"
+test_function_unit_misc_bash_parallel(){
+  : 'Test function_unit_misc_bash_parallel'
+  pwarn "TODO: Not implemented bash_parallel function"
 }
 
 
-test_placeholder_funcname
+test_function_unit_misc_bash_parallel || g_dispatch_i_res=1
 
 
 >&2 echo -e "\n<= $0 returned: $g_dispatch_i_res"

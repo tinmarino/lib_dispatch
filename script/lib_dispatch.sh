@@ -570,8 +570,6 @@ print_usage_main(){
 
   # log "Fct sorted: ${ga_fct_sorted[*]}"
   # log "Fct unsorted: ${a_fct_unsorted[*]}"
-  # log "Fct yes: $(print_args "${a_fct_num_yes[@]}")"
-  # log "Fct noo: $(print_args "${a_fct_num_noo[@]}")"
 
   # Clause: leave early if completing
   if [[ --complete == "$format" ]]; then
@@ -1105,6 +1103,7 @@ is_in_array(){
   : 'Check if arg1 <string> is in rest of args, tested
     Ex: is_in_array search-me in those arguments  # Status: 1 as-search me is not in args
     Return: 1 if error
+    Standalone
     From: https://stackoverflow.com/a/8574392/2544873
   '
   local element='' match="$1"; shift
@@ -1117,6 +1116,7 @@ substract_array(){
   : 'Print the elements of array1 except those in array2, tested
     Do not expect ordered output <= using a dictionnary
     Args: element of array 1 -- args of array2
+    Standalone
     Ex: substract_array toto titi tata -- titi  # Out: toto<br>tata
     From: https://stackoverflow.com/a/2313279/2544873
   '
@@ -1172,6 +1172,8 @@ escape_array(){
     -- ALMA RH8 has Bash 4.4.20(1)
     -- Link: https://stackoverflow.com/questions/12985178
     Return: 0  # always and is always silent
+    Standalone
+    Called by: run --at
   '
   # Clause: no argument no work
   (( 0 == $# )) && return
@@ -1209,149 +1211,9 @@ escape_array(){
 ###################################
 # 1/ Very Lowest level => internal log helpers
 
-pok(){
-  : 'Print success message (args) to stderr'
-  __phelper "$cgreen" "[S] Succeed: " "$@"
-}
-
-pinfo(){
-  : 'Print info message (args) to stderr'
-  __phelper "$cblue" "[I] Info: " "$@"
-}
-
-pwarn(){
-  : 'Print info message (args) to stderr'
-  __phelper "$cyellow" "[W] Warning: " "$@"
-}
-
 perr(){
-  : 'Print args, red to stderr plus a stack trace, tested
-    Use: pstree command if present
-  '
-
-  # Hi: Print error
-  __phelper "$cred" "[E] Error: " "$@"
-
-  # Print process Tree
-  if command -v pstree &> /dev/null; then
-    # From: https://askubuntu.com/a/1012277
-    local tree=$(pstree -pal -s $$)
-    [[ -n "$tree" ]] && >&2 printf "\n${cred}Process tree:${cend} (parent first)\n%s\n" "$tree"
-  fi
-
-  # Print stack
-  local stack="$(print_stack 2)"
-  [[ -n "$stack" ]] && >&2 printf "\n${cred}Stack trace:${cend} (last call first)\n%s\n" "$stack"
-
-  # Bye: Print error, again
-  __phelper
-  __phelper "$cred" "[E] Error: " "$@"
-}
-
-__phelper(){
-  : 'Internal helper: used to print info, warning or error, ToTest
-    Standalone
-    arg1: Color
-    arg2: Prefix
-    arg[2:]: Message lines
-  '
-  # Parse in
-  local color=${1:-} prefix=${2:-} color_end=''
-  local -a a_line=("${@:3}")
-
-  # Append prefix to first line
-  a_line[0]="$prefix${a_line[0]:-}"
-
-  # Add end color
-  [[ -n "$color" ]] && color_end=$cend
-
-  # Say it!
-  local oifs="$IFS"; IFS='';
-  >&2 printf "${color}%b$color_end\n" "${a_line[@]}"
-  IFS="$oifs"
-}
-
-print_stack(){
-  : 'Print current stack trace, tested
-    Depends on: join_by
-    From: https://stackoverflow.com/a/2990533/254487
-  '
-  local -i i_init=${1:-0}  # Frame number where I'll start
-  local -i i_end=${2:-10}  # Frame number where I'll stop
-  local -i i_indent=-4  # Indentation size
-  local -i i_lnum=5  # Number of lines for the first frame
-  local -i b_first_loop=1  # Are we in first loop
-  local -i j=0 k=0 i_frame=0
-
-  # Warn can see more
-  shopt -q extdebug || echo "# Note: run 'shopt -s extdebug' to see call arguments"
-  # For each frame
-  for i_frame in "${!FUNCNAME[@]}"; do
-    # Clause fo not work after stack size
-    [[ ! -v BASH_LINENO ]] && break
-    (( i_frame > ${#BASH_LINENO[@]} )) && break
-    (( i_frame > ${#FUNCNAME[@]} )) && break
-    (( i_frame > i_end )) && break
-
-    ((i_indent+=2))
-
-    # Get lines number of code to print
-    local line_nr="${BASH_LINENO[$i_frame-1]}"
-    if (( i_frame >= i_init )) && (( b_first_loop )); then
-      # Take the lnum lines above for the first call in stack
-      line_nr="$(( ret = line_nr - i_lnum, ret > 1 ? ret : 1 )),$line_nr"
-      b_first_loop=0
-    fi
-
-    # Inspect
-    local pad="$(printf "%${i_indent}s" "")"
-    local fct="${FUNCNAME[$i_frame]:-main}"
-    local file="${BASH_SOURCE[$i_frame]:-terminal}"
-    local line=""
-    ((line_nr != 0)) && {
-      line="$({ [[ -r "$file" ]] && cat "$file" || echo "# No line info"; } \
-      | sed -nE "${line_nr}s/^ */$pad/gp")"
-    }
-
-    # Inspect argument
-    local -a a_argv=()
-    if shopt -q extdebug; then
-      local argc=${BASH_ARGC[i_frame]}
-      for ((j=0; j<argc; j++)); do
-        (( k >= ${#BASH_ARGV[@]} )) && break
-        a_argv[argc-j]=${BASH_ARGV[k++]}
-      done
-    fi
-    local argv=$(join_by ', ' "${a_argv[@]}")
-
-    if (( i_frame >= i_init )); then
-      # Craft message
-      local msg="in "
-      msg+="${cblue}Function:$cend $fct($argv), "
-      msg+="${cblue}File:$cend $file, "
-      msg+="${cblue}Line:$cend $line_nr\n"
-      #msg+="${cblue}Frame:$cend $i_frame\n"
-
-      # Print
-      echo -e "$cyellow$line$cend"
-      printf "%${i_indent}s" ""
-      printf "        %b\n" "$msg"
-    fi
-  done
-}
-
-
-join_by(){
-  : 'Join array string elements (args[2:]) with (by) a delimiter (arg1)
-    Standalone
-    Used by: print_stack
-    From: https://stackoverflow.com/a/17841619/2544873
-    Ex: join_by , a b c => a,b,c
-  '
-  local d=${1-} f=${2-}
-  if shift 2; then
-    printf %s "$f" "${@/#/$d}"
-  fi
+  : 'Basic red lof, overloaded by other libs, like lib_misc'
+  >&2 printf "$cred%b$cend\n" "${@}"
 }
 
 
