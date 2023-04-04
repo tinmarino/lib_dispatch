@@ -380,6 +380,7 @@ __rc(){
 
   # PS1
   parse_git_branch() {
+    # shellcheck disable=SC2317  # (info): Command appears to be unreachable
     git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/' 2> /dev/null;
   }
   export -f parse_git_branch
@@ -408,6 +409,7 @@ __rc(){
 
   # Trap exit
   __at_exit(){
+    # shellcheck disable=SC2317  # (info): Command appears to be unreachable
     echo "Bye from IRM SHELL"
   }
   trap __at_exit EXIT

@@ -17,7 +17,8 @@ test_shellcheck(){
   exclude+=SC2155,  # Declare and assign separately to avoid masking return values -> Prevent declare -a, local t=$(get)
   exclude+=SC2092,  # Remove backticks for docstring in code
   exclude+=SC2154,  # cyellow is referenced but not assigned.
-  exclude+=SC2016  # Expressions don't expand in single quotes, use double quotes for that
+  exclude+=SC2016,  # Expressions don't expand in single quotes, use double quotes for that
+  exclude+=SC2317   # (info): Command appears to be unreachable for tests
 
   # Hi
   start_test_function "Testing Linting of scripts with shellcheck, exclude=$exclude"
@@ -34,6 +35,7 @@ test_shellcheck(){
   # Clause shellcheck version > 0.7
   local version=$(shellcheck -V | sed -n '/version: [0-9.]/s/version: *//p')
   version=${version##0.}
+  version=${version%%.*}
   if (( version >= 7 )); then
     equal 0 0 "Info: OK: Shellcheck version >= 0.7 ($version)"
   else

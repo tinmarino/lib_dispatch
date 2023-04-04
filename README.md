@@ -10,6 +10,7 @@ Write file test.sh
 
 ```bash
 #!/usr/bin/env bash
+
 [[ ! -r ./lib_dispatch.sh ]] && curl https://raw.githubusercontent.com/tinmarino/lib_dispatch/main/script/lib_dispatch.sh -o lib_dispatch.sh
 source ./lib_dispatch.sh
 

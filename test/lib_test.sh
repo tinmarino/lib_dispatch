@@ -4,6 +4,7 @@
 : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
 source "$gs_root_path/script/lib_bash.sh"
 
+: "${cpurple:=}" "${cend:=}"
 
 start_test_function(){
   local rest=''
@@ -64,7 +65,7 @@ art_parallel_suite(){
 
   for function; do
     # shellcheck disable=SC2034  # gd_bash_parallel_command appears unused
-    gd_bash_parallel_command[$function]="function_worker \"$function\""
+    gd_bash_parallel_command[function]="function_worker \"$function\""
     #function_worker "$function"
   done
 
