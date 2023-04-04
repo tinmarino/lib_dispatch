@@ -256,7 +256,7 @@ hi(){
   -- Can be used as jenkins debug command, or for stamping logs
   '
   local -i i_indent="${3:-0}"
-  local s_indent="$(printf "%${i_indent}s" "")"
+  local indent="$(printf "%${i_indent}s" "")"
   local tip=''
   print_title "System Information" "" "$i_indent"
 
@@ -296,14 +296,14 @@ hi(){
   fi
 
   # Craft full message
-  local msg="  ${s_indent}${cblue}Host ---- :$cend ${USER:-USERNAME}@$HOSTNAME
-  ${s_indent}${cblue}Kernel -- :$cend $(uname -a)
-  ${s_indent}${cblue}OS Name - :$cend $(get_os_name)
-  ${s_indent}${cblue}Capability:$cend color:$(can_color && echo yes || echo no)
-  ${s_indent}${cblue}Date ---- :$cend $(date "+%Y-%m-%dT%H:%M:%S")
-  ${s_indent}${cblue}Cpu ----- :$cend $cpu_msg
-  ${s_indent}${cblue}Usage --- :$cend $usage
-  ${s_indent}${cblue}Process --- :$cend $$
+  local msg="  ${indent}${cblue}Host ---- :$cend ${USER:-USERNAME}@$HOSTNAME
+  ${indent}${cblue}Kernel -- :$cend $(uname -a)
+  ${indent}${cblue}OS Name - :$cend $(get_os_name)
+  ${indent}${cblue}Capability:$cend color:$(can_color && echo yes || echo no)
+  ${indent}${cblue}Date ---- :$cend $(date "+%Y-%m-%dT%H:%M:%S")
+  ${indent}${cblue}Cpu ----- :$cend $cpu_msg
+  ${indent}${cblue}Usage --- :$cend $usage
+  ${indent}${cblue}Process --- :$cend $$
   "
   echo -e "$msg" | sed -e 's/^[[:space:]]\{2\}//'
 
@@ -319,18 +319,18 @@ hi(){
   for v_env in "${a_env[@]}"; do
     # Separator
     if [[ "$v_env" =~ - ]]; then
-      echo -e "${s_indent}${cpurple}$v_env$cend"
+      echo -e "${indent}${cpurple}$v_env$cend"
 
     # Not defined
     elif [[ ! -v "$v_env" ]]; then
-      echo -e "${s_indent}${cblue}$v_env=$cend"
+      echo -e "${indent}${cblue}$v_env=$cend"
 
     # Key value
     else
       local value="${!v_env}"
       [[ "$v_env" == RELEASE ]] \
         && value="${cpurple}$value$cend"
-      echo -e "${s_indent}${cblue}$v_env=$cend\"$value\""
+      echo -e "${indent}${cblue}$v_env=$cend\"$value\""
     fi
   done;
 

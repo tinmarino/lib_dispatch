@@ -11,9 +11,6 @@ if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
 fi
 
 
-test_function_equal(){
-
-
 test_function_abat(){
   : "IDEA test if bat is available"
   # -- 1: Normal
