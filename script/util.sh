@@ -296,7 +296,7 @@ hi(){
   fi
 
   # Craft full message
-  local msg="  ${s_indent}${cblue}Host ---- :$cend $USER@$HOSTNAME
+  local msg="  ${s_indent}${cblue}Host ---- :$cend ${USER:-USERNAME}@$HOSTNAME
   ${s_indent}${cblue}Kernel -- :$cend $(uname -a)
   ${s_indent}${cblue}OS Name - :$cend $(get_os_name)
   ${s_indent}${cblue}Capability:$cend color:$(can_color && echo yes || echo no)

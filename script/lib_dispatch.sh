@@ -1507,10 +1507,10 @@ mm_at(){
   exit $?  # In --at which is doing all by itself
 }
 
-__complete_mm_at(){
-  printf '%b\n' {"","$USER"@}{"$HOSTNAME",""}
-}
 
+__complete_mm_at(){
+  printf '%b\n' {"","${USER:-$USERNAME}"@}{"$HOSTNAME",""}
+}
 
 
 # In order to single source as ssh (see --at)

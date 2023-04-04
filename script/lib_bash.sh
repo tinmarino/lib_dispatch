@@ -181,8 +181,9 @@ wait_pid_array(){
 user_at_host(){
   : 'Print USER@HOSTNAME, tested'
   local user_at_host=localhost
+  local user=${USER:-$USERNAME}
   [[ -v HOSTNAME ]] && [[ -n "$HOSTNAME" ]] && user_at_host=$HOSTNAME
-  [[ -v USER ]] && [[ -n "$USER" ]] && user_at_host="$USER@$user_at_host"
+  user_at_host="$user@$user_at_host"
   echo "$user_at_host"
 }
 
