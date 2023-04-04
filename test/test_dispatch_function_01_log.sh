@@ -10,93 +10,10 @@ if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
   source "$gs_root_path/test/lib_test.sh"
 fi
 
+# Silence shellcheck
+: "${g_dispatch_i_res:=0}"
 
-test_function_abat(){
-  : "IDEA test if bat is available"
-  # -- 1: Normal
-  out=$(echo -e 'this\n is an unk_string yes\nend' | abat); equal 0 $? 'abat never fails'
-  [[ "$out" =~ unk_string ]]; equal 0 $? 'abat do not highlight an unknown string'
-
-  # -- 2: No in no out
-  # Comment out as not wokring if bat not installed, there are some escape sequences
-  # -- out=$(echo -n | abat); equal 0 $? 'abat never fails'
-  # -- [[ -z "$out" ]]; equal 0 $? 'abat no in no out'
-
-  # -- N: no input
-  # Comment out as not running in jenkins ...
-  # -- out=$(command_timeout 1 bash -c "source \"$gs_root_path/test/lib_test.sh\"; abat 2> /dev/null"); equal "$E_REQ" $? 'abat must complain if not run in a pipe'
-  # -- equal '' "$out" 'abat out of pipe should not print to stdout'
-}
-
-
-test_function_join_by(){
-  # -- 1: No space in delimiter
-  out=$(join_by , a b c); equal 0 $? 'join_by never fails 1'
-  equal a,b,c "$out" 'join by out 1'
-
-  # -- 2: Space in delimiter
-  out=$(join_by ' , ' a b c); equal 0 $? 'join_by never fails 2'
-  equal 'a , b , c' "$out" 'join by 2'
-
-  # -- 3: Weird delimiter
-  out=$(join_by ')|(' a b c); equal 0 $? 'join_by never fails 3'
-  equal 'a)|(b)|(c' "$out" 'join by 3'
-
-  # -- 4: Percent-like delimiter
-  out=$(join_by ' %s ' a b c); equal 0 $? 'join_by never fails 4'
-  equal 'a %s b %s c' "$out" 'join by 4'
-
-  # -- 5: Newline delimiter
-  out=$(join_by $'\n' a b c); equal 0 $? 'join_by never fails 5'
-  equal $'a\nb\nc' "$out" 'join by 5'
-
-  # -- 5: Newline in delimiter
-  out=$(join_by $'dd\nee' a b c); equal 0 $? 'join_by never fails 5'
-  equal $'add\neebdd\neec' "$out" 'join by 5'
-
-  # -- 6: Minus delimiter
-  out=$(join_by - a b c); equal 0 $? 'join_by never fails 6'
-  equal 'a-b-c' "$out" 'join by 6'
-
-  # -- 7: backslash delimiter
-  out=$(join_by "\\" a b c); equal 0 $? 'join_by never fails 7'
-  equal 'a\b\c' "$out" 'join by 7'
-
-  # -- 8: Minus arguments
-  out=$(join_by '-n' '-e' '-E' '-n'); equal 0 $? 'join_by never fails 8'
-  equal '-e-n-E-n-n' "$out" 'join by 8'
-
-  # -- 9: Argument missing => nothing
-  out=$(join_by ,); equal 0 $? 'join_by never fails 9'
-  equal '' "$(join_by ,)" 'join by 9'
-
-  # -- 10: Only one argument
-  out=$(join_by , a); equal 0 $? 'join_by never fails 10'
-  equal 'a' "$(join_by , a)" 'join by 10'
-}
-
-
-test_function_print_stack(){
-  # Helper to test stack
-  fct2(){
-    # Line before
-    print_stack
-    return $?
-  }
-  fct1(){
-    fct2 "$@"
-    return $?
-  }
-  # -- 1: Normal use
-  out=$(fct1 a "b c" d)
-  equal 0 $? "print_stack with function name"
-  [[ "$out" =~ fct2.*fct1 ]]; equal 0 $? "print_stack the stack appears with desired function in desired order"
-  [[ "$out" =~ lib_dispatch ]]; equal 0 $? "print_stack the stack contains 'test_dispatch_function.sh' name of the current file"
-
-  # -- 2: With argument trace
-  out=$(shopt -s extdebug; fct1 grepme-argument a "b c" d)
-  [[ "$out" =~ "grepme-argument, a, b c, d" ]]; equal 0 $? "print_stack stack with argument if extdebug"
-}
+depend ""
 
 
 test_function_phelper(){

@@ -11,8 +11,8 @@ fi
 # Silence shellcheck
 : "${g_dispatch_i_res:=0}"
 
-
 depend ""
+
 
 test_function_equal(){
   : 'test me first as they all depend on me!'
@@ -22,20 +22,9 @@ test_function_equal(){
   equal '' "$out" 'Equal: equal 0 0: must have no standard output'
 
   # 2 Integer failure and stdout
-  # -- Move fd 42 -> 52 
-  # -- and fd 32 -> 42
-  if { : >&42; } 2> /dev/null; then
-    exec 52>&42
-    exec 42>&1
-  fi
-  out=$(g_junit_file="" equal 1 0 'Test self' 2> /dev/null); equal 1 $? 'Equal: equal 1 0: must return exit status 1'
+  out=$(g_junit_file="" gi_summary_write_fd=0 equal 1 0 'Test self' 2> /dev/null); equal 1 $? 'Equal: equal 1 0: must return exit status 1'
   equal '' "$out" 'Equal: equal 1 0: must have no standard output'
   equal '' "$out" 'Equal: equal 1 0: must have no standard output'
-  if { : >&52; } 2> /dev/null; then
-    exec 42>&52
-    exec 52>&-
-  fi
-
 
   # 3 String success and stderr
   out=$(g_junit_file="" equal '  aa b ' '  aa b '  'grepme  equal1' 2>&1); equal 0 $? 'Equal: equal with same string must return 0'
@@ -45,18 +34,10 @@ test_function_equal(){
   [[ "$out" =~ "grepme  equal1" ]]; equal 0 $? "Equal: equal function must print the comment argument"
 
   # 4 String failure and stderr
-  if { : >&42; } 2> /dev/null; then
-    exec 52>&42
-    exec 42>&1
-  fi
-  out=$(g_junit_file="" equal ' aa b ' 'aa b '  'grepme  equal2' 2>&1); equal 1 $? 'Equal: equal with different strings must return 0'
+  out=$(g_junit_file="" gi_summary_write_fd=0 equal ' aa b ' 'aa b '  'grepme  equal2' 2>&1); equal 1 $? 'Equal: equal with different strings must return 1'
   [[ "$out" == *"[-]"* ]]; equal 0 $? "Equal: equal string OK with [mimus]"
   [[ "$out" == *"Error"* ]]; equal 0 $? 'equal string OK with (the bad word)'
   [[ "$out" == *"grepme  equal2"* ]]; equal 0 $? 'equal string OK with Arg3'
-  if { : >&52; } 2> /dev/null; then
-    exec 42>&52
-    exec 52>&-
-  fi
 
   # 5 Introspection
   out=$(g_junit_file="" equal 'grepme equal3' 'grepme equal3' 2>&1); equal 0 $? 'equal same string again => ret 0'
@@ -73,7 +54,6 @@ test_function_equal(){
 
 
 test_function_equal
-
 
 >&2 echo -e "\n<= $0 returned: $g_dispatch_i_res"
 exit "$g_dispatch_i_res"

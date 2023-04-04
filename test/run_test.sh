@@ -8,7 +8,11 @@ source "$gs_root_path/test/lib_test.sh"
 
 # Declate the report fd
 # g: global, i: interger, x: export
-declare -gix gi_summay_fd=0
+declare -gix gi_summary_write_fd=0
+declare -gix g_dispatch_i_res=0
+
+# Silence shellcheck
+: "${cgreen:=}" "${cred:=}" "${cend:=}"
 
 main(){
   : "Check dispatch project"
@@ -20,10 +24,13 @@ main(){
     local -i start_time=$(date +%s)
   fi
   local -i res=0 ret=0 i_fd=0 b_async=0 #i_fd_summary=0
-  local -a a_pid=()  # Array of pid
-  local -a a_test_file=()  # Array of test file name to execute
-  local -a a_fd=()  # Array of fd corresponding to the stdout of this file to lock
+  local -A d_pid=()  # Array of pid
+  local -A d_test_file=()  # Array of test file name to execute
+  local -A d_fd=()  # Array of fd corresponding to the stdout of this file to lock
+  local -A d_status=()  # Array exit status
   #local -a a_fd_summary=()  # Array of child summary to return (list of errors)
+  local -a a_test_file=()  # Array of test file name to execute
+  local test_file='' key=''
 
 
   is_in_array async "$@" && b_async=1
@@ -53,9 +60,26 @@ main(){
     GLOBIGNORE=''
     a_test_file+=("$gs_root_path"/test/test_art*.sh)
   else
-    # Prepend absolute path of test
-    local a_test_file=("${@/#/$gs_root_path/test/}")
+    local test_file=''
+    for test_file; do
+      # Prepend absolute path of test
+      # local a_test_file=("${@/#/$gs_root_path/test/}")
+      [[ "$test_file" != test_* ]] && test_file="test_$test_file"
+      [[ "$test_file" != *.sh ]] && test_file="$test_file.sh"
+      test_file="$gs_root_path/test/$test_file"
+      a_test_file+=("$test_file")
+    done
   fi
+
+  # Create keys
+  for test_file in "${a_test_file[@]}"; do
+    key=${test_file#"$gs_root_path"}
+    key=${key#/}
+    key=${key#test/}
+    key=${key#test_}
+    key=${key%.sh}
+    d_test_file[$key]=$test_file
+  done
 
   # Restore env
   export GLOBIGNORE=$globignore_save
@@ -81,11 +105,10 @@ main(){
   # hijack the pipe's file descriptors using procfs
   # l-wx------ 1 mtourneb mtourneb 64 ene  6 00:46 42 -> pipe:[4317132]
   # lr-x------ 1 mtourneb mtourneb 64 ene  6 00:46 43 -> pipe:[4317132]
-  # 42 for Write
-  # TODO remove 42 hardcode
-  exec 42>/proc/"$PID1"/fd/1
-  # 43 for Read
-  exec 43</proc/"$PID2"/fd/0
+  # Steal write fd
+  exec {gi_summary_write_fd}>/proc/"$PID1"/fd/1
+  # Steal read fd
+  exec {gi_summary_read_fd}</proc/"$PID2"/fd/0
   
   # kill the background processes we no longer need
   # (using disown suppresses the 'Terminated' message)
@@ -97,7 +120,8 @@ main(){
   >&2 echo -e "Testing dispatch. version=$VERSION_DISPATCH commit:\n$commit"
 
   # Start run all file in test like test_*
-  for test_file in "${a_test_file[@]}"; do
+  for key in "${!d_test_file[@]}"; do
+    test_file=${d_test_file[$key]}
     # Clause: do not test async <= is a keyword
     [[ async == "$test_file" ]] && continue
 
@@ -141,10 +165,10 @@ main(){
       })
 
       # -- Save pid of async
-      a_pid+=($!)
+      d_pid[$key]=$!
       # -- Save fd of async
-      a_fd+=("$i_fd")
-      
+      # shellcheck disable=SC2034  # d_fd appears unused
+      d_fd[$key]=$i_fd
     fi
 
     # Write junit test_suite end
@@ -153,30 +177,56 @@ main(){
     fi
   done
 
-  # So can close 42, used for write, required to close the pipe when childs are OK
-  # TODO hardcode
-  exec 42>&-
+  # So can close write fs
+  # -- required to close the pipe when childs are OK
+  exec {gi_summary_write_fd}>&-
 
   # Async wait
   if ((b_async)); then
     ## Wait for all jobs
-    wait_pid_array "${a_pid[@]}"; ((res|=$?))
-  fi
+    #wait_pid_array "${d_pid[@]}"; ((res|=$?))
+    local -i pid=0 ret=0
+    for key in "${!d_pid[@]}"; do
+      pid=${d_pid[$key]}
+        wait "$pid" &> /dev/null; ret=$?
+        d_status[$key]=$ret
+        (( 0 == ret )) && continue
+        (( 127 == ret )) && break
+        ((res |= ret ))
+      done
+    fi
 
   # Lock Grep interesting output (error and warning)
-  local s_error=$(cat <&43)
-  if [[ -n "$s_error" ]]; then
+  local err_summary=$(cat <&"$gi_summary_read_fd")
+  if [[ -n "$err_summary" ]]; then
     # Echo Tail
     >&2 echo -e "\n====================================="
-    >&2 echo -e "$s_error"
+    >&2 echo -e "$err_summary"
   fi
   
-  # Close fd
-  exec 43>&-
+  # Close read fd
+  exec {gi_summary_read_fd}>&-
 
   # Safely set status if grep error,
   # for bash-4.2 that has trouble to get status
-  (( res == 0 )) && [[ -n "$s_error" ]] && res=1
+  (( res == 0 )) && [[ -n "$err_summary" ]] && res=1
+
+  # Write file summary
+  echo -e "\n\nFile Summary\n============================="
+  for key in "${!d_test_file[@]}"; do
+    [[ async == "$key" ]] && continue
+    local color='' tail=''
+    local -i status=${d_status[$key]}
+    if (( 0 == status )); then
+      color="$cgreen"
+      tail="SUCCESS"
+    else
+      color="$cred"
+      tail="ERROR"
+    fi
+    printf '%-40s %s\n' "$color* $key" "status $tail"
+  done
+  echo -e "=============================\n"
 
   # Calcultate time spent
   if [[ osx != $(get_os) ]]; then

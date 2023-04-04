@@ -407,7 +407,7 @@ call_fct_arg(){
           #     "Tip: remove the function m_$chr from your script or edit lib_dispatch"
           #exit "$E_ARG"
         elif ! is_in_array "m_$chr" "${!g_dispatch_d_fct[@]}"; then
-          echo "Warning: lib_dispatch: unknown -$chr argument => ignoring"
+          # echo "Warning: lib_dispatch: unknown -$chr argument => ignoring"
           continue
         fi
 

@@ -1023,9 +1023,11 @@ equal(){
     #stdout_line+="$(print_stack 2 2 | sed -e 's/^/  -- Stack:/')\n"
     stdout_line+="\n\n"
     
-    DISPATCH_EQUAL_ERR+="$stdout_line"
-    # TODO remove the 42 hardcode
-    trap "echo -e \"\$DISPATCH_EQUAL_ERR\" >&42" EXIT
+    # Append to summary fd
+    if [[ -v gi_summary_write_fd ]] && (( gi_summary_write_fd != 0)); then
+      DISPATCH_EQUAL_ERR+="$stdout_line"
+      trap "echo -e \"\$DISPATCH_EQUAL_ERR\" >&{gi_summary_write_fd}" EXIT
+    fi
   fi
   
 

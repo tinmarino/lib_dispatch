@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit test for placeholder_filename
+# Unit test for placeholder_funcname
 
 # Source test utilities
 if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
@@ -11,17 +11,17 @@ fi
 # Silence shellcheck
 : "${g_dispatch_i_res:=0}"
 
+# Declare dependencies
+depend
 
-test_placeholder_filename(){
-  g_dispatch_i_res=0
 
+test_placeholder_funcname(){
+  : 'Test placeholder_funcname'
   equal 0 0 "TODO implement test"
-
-  return "$g_dispatch_i_res"
 }
 
 
-test_placeholder_filename || g_dispatch_i_res=1
+test_placeholder_funcname || g_dispatch_i_res=1
 
 
 >&2 echo -e "\n<= $0 returned: $g_dispatch_i_res"

@@ -54,6 +54,9 @@ __complete_unit_test(){
   : "Internal for completion of lib_dispatch master unit_test"
   pushd "$gs_root_path"/test &> /dev/null || return "$E_CD"
 
+  local out=''
+  local test_file=''
+
   # Echo all test file
   for test_file in async test_*.sh; do
     if [[ async == "$test_file" ]]; then
@@ -61,8 +64,16 @@ __complete_unit_test(){
     else
       local desc=$(get_file_docstring "$test_file")
     fi
-    echo -e "$test_file : $desc"
+
+    # Shorten name
+    test_file=${test_file#test_}
+    test_file=${test_file%.sh}
+
+    # Append to message out
+    out+="$test_file : $desc\n"
   done
+
+  echo -e "$out"
 
   popd &> /dev/null || return "$E_CD"
 }
@@ -461,6 +472,15 @@ new_test_file(){
     return "$E_REQ"
   fi
 
+  # Grab the -f flag
+  local -i b_force=0
+  if is_in_array -f "$@"; then
+    b_force=1
+    local -a a_arg=()
+    readarray -t a_arg < <(substract_array "$@" -- -f)
+    set -- "${a_arg[@]}"
+  fi
+
   # Parse arg in
   local arg=$1
   
@@ -482,7 +502,7 @@ new_test_file(){
 
   # Clause: filename must not exist
   local path="$gs_root_path/test/$filename"
-  if [[ -e "$path" ]]; then
+  if (( ! b_force)) && [[ -e "$path" ]]; then
     perr "new_test_file: file $path already exist, please create a new test file or delete this file" \
       "Tip: new_test_file unit_not_already_exisiting"
     return "$E_REQ"
@@ -490,12 +510,14 @@ new_test_file(){
 
   # Craft content
   local content=$(<"$gs_root_path"/res/test_template.sh)
-  content=${content//placehodler_funcname/$funcname/}
-  content=${content//placehodler_filename/$filename/}
+  content=${content//placeholder_funcname/$funcname}
+  content=${content//placeholder_filename/$filename}
   
   # Write file
   echo "$content" > "$path"
   chmod +x "$path"
+
+  pinfo "File '$path' created"
 }
 
 
