@@ -9,7 +9,7 @@ gs_root_path="$(dirname "$gs_root_path")"
 source "$gs_root_path/test/lib_test.sh"
 
 # Declate the report fd
-# g: global, i: interger, x: export
+# g: global, i: integer, x: export
 declare -gix gi_summary_write_fd=0
 declare -gix g_dispatch_i_res=0
 
@@ -20,7 +20,7 @@ main(){
   : "Check dispatch project"
   # TODO warn if remote
   if [[ osx != $(get_os) ]]; then
-    # In milisecond
+    # In millisecond
     local -i start_time=$(date +%s%N)
   else
     local -i start_time=$(date +%s)
@@ -92,7 +92,7 @@ main(){
   # See: https://stackoverflow.com/a/34195247/2544873
   compgen -G "$gs_root_path"/test/test_*sh &> /dev/null || {
     perr "Check self: Cannot test self <= test files are not present" \
-         "Tip: try to run locally <= test files seems to not have been copyed"
+         "Tip: try to run locally <= test files seems to not have been copied"
     return "$E_REQ"
   }
 
@@ -183,7 +183,7 @@ main(){
   done
 
   # So can close write fs
-  # -- required to close the pipe when childs are OK
+  # -- required to close the pipe when children are OK
   exec {gi_summary_write_fd}>&-
 
   # Async wait
@@ -260,7 +260,7 @@ main(){
   echo "$br"
 
   echo -e "\nGoodbye\n============================="
-  # Calcultate time spent
+  # Calculate time spent
   if [[ osx != $(get_os) ]]; then
     local -i end_time=$(date +%s%N)
     local -i total_time=$((end_time - start_time))

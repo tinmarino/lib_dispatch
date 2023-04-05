@@ -38,8 +38,8 @@
     [mm_help]="❓Print this message (-h) [available for subcmd]"
     [mm_doc]="❓Print this message [available for subcmd]"
   )
-  declare -gA g_dispatch_d_fct=()  # Fct dictionnary: the tail to call (no dispatch)
-  declare -gA g_dispatch_d_cmd=()  # Subcommand dictionnary (these subcommand mus tcall dispatch)
+  declare -gA g_dispatch_d_fct=()  # Fct dictionary: the tail to call (no dispatch)
+  declare -gA g_dispatch_d_cmd=()  # Subcommand dictionary (these subcommand mus tcall dispatch)
   declare -ga g_dispatch_a_fct_to_hide=()  # Array of already defined function to hide (Filled by lib_dispatch)
   declare -ga g_dispatch_a_dispach_args=()  # Array of arguments given by the first user command
   readarray -t g_dispatch_a_fct_to_hide < <(declare -F -p | cut -d " " -f 3)
@@ -117,7 +117,7 @@
   if (( ! g_dispatch_b_complete )); then
     shopt -s extdebug  # To get function argument in stacktrace
     set -o errtrace  # If set, the ERR trap is inherited by shell functions.
-    # TODO test with minimal exmaple (2H)
+    # TODO test with minimal example (2H)
     #trap 'perr "Info: abnormal status raised (ERR)"' ERR
     #trap 'perr "Info: abnormal exit"' EXIT
     shopt -s expand_aliases
@@ -182,7 +182,7 @@ register_subcommand_from_gd_cmd(){
 fill_fct_dic(){
   : 'Internal: Fill g_dispatch_d_fct the Global Dictionary of defined functions, tested
     -- coded with asyncronic pipe redirection (fork-join)
-    Depends on: substract_array get_fct_docstring
+    Depends on: subtract_array get_fct_docstring
     Global: g_dispatch_d_fct (out) dict<functions,docstring> where functions are the ones declared in calling script
     Global: g_dispatch_d_fct_default (in) dict<functions,docstring> where default functions are defined
     Global: g_dispatch_a_fct_to_hide (in) array<functions> where function already defined in parent shell must be hideen
@@ -192,7 +192,7 @@ fill_fct_dic(){
   local fct=''
 
   # Hide function: a_fct_all - g_dispatch_a_fct_to_hide => a_fct_see
-  readarray -t a_fct_see < <(substract_array "${a_fct_all[@]}" -- "${g_dispatch_a_fct_to_hide[@]}")
+  readarray -t a_fct_see < <(subtract_array "${a_fct_all[@]}" -- "${g_dispatch_a_fct_to_hide[@]}")
 
   # For visible function: get functions docstring
   ## -- Safe expansion to avoid: a_fct_see[@]: unbound variable
@@ -310,7 +310,7 @@ call_fct_arg(){
     return $?
   fi
 
-  # Save first arguments for diplay
+  # Save first arguments for display
   if (( ! ${#g_dispatch_a_dispach_args[@]} )); then
     g_dispatch_a_dispach_args=("$@")
   fi
@@ -382,7 +382,7 @@ call_fct_arg(){
     elif is_in_array "$arg" "${!g_dispatch_d_cmd[@]}"; then
       local subcmd_file="${g_dispatch_d_cmd["$arg"]}"
 
-      # Hide currently defined fuction (by dispatch for example) so enters an empty namespace
+      # Hide currently defined function (by dispatch for example) so enters an empty namespace
       declare -gA g_dispatch_d_fct=()
       declare -gA g_dispatch_d_cmd=()
       if [[ alma != "$arg" ]]; then
@@ -501,7 +501,7 @@ print_usage_main(){
     Arg1: format: --complete --help --doc --html
   '
   local format="${1:---help}"
-  local -a a_fct_unsorted=() a_fct_num_yes=() a_fct_num_noo=()
+  local -a a_fct_unsorted=() a_fct_num_yes=() a_fct_num_no=()
 
   # Get all fct doc dictionary
   readarray -t a_fct_unsorted < <(
@@ -519,17 +519,17 @@ print_usage_main(){
   # Grep function with number in their comment or no
   local re='^\S+ +\d+\/'
   readarray -t a_fct_num_yes < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep    "$re" | sort -nk2 -k1 | cut -d' ' -f1)
-  readarray -t a_fct_num_noo < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep -v "$re" | sort -k1      | cut -d' ' -f1)
+  readarray -t a_fct_num_no < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep -v "$re" | sort -k1      | cut -d' ' -f1)
 
   # Sort function name inteligently: argument last and if number in comment, respect order
   local is_mm="^mm_"
   readarray -t ga_fct_sorted < <(
     # Without mm_ => normal function
     (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep -v "$is_mm"
-    (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep -v "$is_mm"
+    (( ${#a_fct_num_no[@]} )) && printf '%s\n' "${a_fct_num_no[@]}" | grep -v "$is_mm"
     # With mm_ => print arguments at end
     (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep "$is_mm"
-    (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep "$is_mm"
+    (( ${#a_fct_num_no[@]} )) && printf '%s\n' "${a_fct_num_no[@]}" | grep "$is_mm"
   )
 
   # Clause: leave early if completing
@@ -584,8 +584,8 @@ print_usage_main(){
 }
 
 print_usage_fct(){
-  : 'Print functon description, tested
-    Big formating bazar
+  : 'Print function description, tested
+    Big formatting bazar
     Depends on: colorize_docstring
     Arg1: format <string>: complete, help, doc
     Arg2: type <string>: option, function, all
@@ -708,7 +708,7 @@ print_usage_env(){
 
   # Check: awk command must be present
   if ! command -v awk > /dev/null; then
-    perr "print_unindent function requries awk command" \
+    perr "print_unindent function requires awk command" \
       "Tip: apt install gawk"
   fi
 
@@ -813,7 +813,7 @@ get_file_docstring(){
 
   # Check: awk command must be present
   if ! command -v awk > /dev/null; then
-    perr "get_file_docstring function requries awk command" \
+    perr "get_file_docstring function requires awk command" \
       "Tip: apt install gawk"
   fi
 
@@ -923,7 +923,7 @@ get_fct_docstring(){
     # Remove leading space indent
     line=${line:$i_indent}
 
-    # Remove trailing ';' potencially  added by parser
+    # Remove trailing ';' potentially  added by parser
     line="${line//\\\"/placeholder-quote-double}"  # ICT-20554: Save escaped \"
     line="${line//\\\'/placeholder-quote-single}"  # ICT-20554: Save escaped \'
     line=${line//[\"\'];/}
@@ -931,7 +931,7 @@ get_fct_docstring(){
     line="${line//placeholder-quote-single/\\\'}"  # Replace back
     line="${line//placeholder-quote-double/\\\"}"
 
-    # Add newline potencially
+    # Add newline potentially
     [[ -n "$doc" ]] && doc+=$'\n'
 
     # Concat: finally, will be evaluated later
@@ -991,12 +991,12 @@ is_in_array(){
 }
 
 
-substract_array(){
+subtract_array(){
   : 'Print the elements of array1 except those in array2, tested
-    Do not expect ordered output <= using a dictionnary
+    Do not expect ordered output <= using a dictionary
     Args: element of array 1 -- args of array2
     Standalone
-    Ex: substract_array toto titi tata -- titi  # Out: toto<br>tata
+    Ex: subtract_array toto titi tata -- titi  # Out: toto<br>tata
     From: https://stackoverflow.com/a/2313279/2544873
   '
   local -i b_is_second=0
@@ -1113,7 +1113,7 @@ is_sourced(){
 
 
 
-# If sourced: Declare functions to hide (after) the potencial call
+# If sourced: Declare functions to hide (after) the potential call
 if is_sourced; then
   readarray -t g_dispatch_a_fct_to_hide < <(declare -F -p | cut -d " " -f 3)
 fi

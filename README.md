@@ -59,6 +59,6 @@ Include me, declare some user functions and then call:
 | __set_env           | autoparsed for documentation, call it yourself |
 | __complete_toto     | autocalled when completing toto function |
 
-This interecting file is [lib_dispatch.sh](./script/lib_dispatch.sh).
+This interacting file is [lib_dispatch.sh](./script/lib_dispatch.sh).
 
 TODO some documentation on my personal page or here in doc.

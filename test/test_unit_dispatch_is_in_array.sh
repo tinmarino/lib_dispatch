@@ -26,7 +26,7 @@ test_function_unit_dispatch_is_in_array(){
   equal '' "$out" "is_in_array no output 3"
   is_in_array "a" "${array[@]}"; equal 1 $? 'is_in_array not found a'
   is_in_array "a strin" "${array[@]}"; equal 1 $? 'is_in_array not found substring'
-  out=$(is_in_array "a stringg" "${array[@]}" 2>&1); equal 1 $? 'is_in_array not foudn superstring'
+  out=$(is_in_array "a stringg" "${array[@]}" 2>&1); equal 1 $? 'is_in_array not found superstring'
   equal '' "$out" "is_in_array no output 4"
 }
 

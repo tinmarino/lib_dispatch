@@ -19,7 +19,7 @@ test_function_unit_misc_bash_timeout(){
   : 'Test function_unit_misc_bash_timeout'
   # Define helper function
   test_timeout(){
-    # 1: max timout, 2: soft timeout
+    # 1: max timeout, 2: soft timeout
     system_timeout "$1" bash -c '
       '"$(declare -f bash_timeout)"'
       bash_timeout '"$2"' '"'$3'"'

@@ -149,7 +149,7 @@ test_function_irm_example_calls(){
 
   command dispatch &> /dev/null; equal 0 $? 'command dispatch succeed (again)'
   out=$(command dispatch example) &> /dev/null; equal 0 $? 'command dispatch example status'
-  out=$(command dispatch example succeed 2> /dev/null) &> /dev/null; equal 0 $? 'command dispatch example succeed staus'
+  out=$(command dispatch example succeed 2> /dev/null) &> /dev/null; equal 0 $? 'command dispatch example succeed status'
   out=$(command dispatch example fail 2> /dev/null) &> /dev/null; equal 42 $? 'command dispatch example fail status'
   err=$(command dispatch example fail 2>&1 > /dev/null); equal 42 $? 'command dispatch example fail status'
   # Legacy used to be grep -cP '^(\e.*?m)?\K<--'
@@ -211,8 +211,8 @@ test_function_main_optional_argument(){
   # -- 4:
   out=$(dispatch -tuwtu fct_42)
   equal 42 $? 'dispatch status 4'
-  equal tu "${out:0:2}" 'dispath out 4 / 1'
-  equal tu "${out:0:2}" 'dispath out 4 / 2'
+  equal tu "${out:0:2}" 'dispatch out 4 / 1'
+  equal tu "${out:0:2}" 'dispatch out 4 / 2'
   equal tu "${out: -2}" "Output string from -tuwtu will start and end by 'tu' with potential warning in between for unknown parameter 'w'"
 
   return "$g_dispatch_i_res"

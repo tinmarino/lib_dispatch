@@ -20,7 +20,7 @@ test_function_unit_misc_get_opt(){
   equal "arg1 arg2" "$(get_opt --param --param arg1 arg2)" 'get_opt with only good parameter'
   equal "arg1 arg2" "$(get_opt --param --date 30 --param arg1 arg2)" 'get_opt prefixed with other parameter'
   equal "arg1 arg2" "$(get_opt --param positional --param arg1 arg2 --date 30)" 'get_opt with redundant parameter'
-  equal "" "$(get_opt --param)" 'get_opt no aditional parameter, no output'
+  equal "" "$(get_opt --param)" 'get_opt no additional parameter, no output'
   get_opt 2> /dev/null; equal "$E_REQ" $? 'get_opt with zero parameter should fail'
   equal "" "$(get_opt 2> /dev/null)" 'get_opt with zero parameter should have no stdout'
 }

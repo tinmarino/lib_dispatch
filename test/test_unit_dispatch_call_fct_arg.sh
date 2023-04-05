@@ -43,7 +43,7 @@ test_function_unit_dispatch_call_fct_arg(){
   equal 'grepme-titi:value::--opt value|' "$out" 'call_fct_arg toto out'
 
   # -- 6: --opt value
-  out=$(call_fct_arg --opt value); equal 0 $? 'call_fct_arg status (6). Must return 0 (as argumnet passing succeded) or could have side effect'
+  out=$(call_fct_arg --opt value); equal 0 $? 'call_fct_arg status (6). Must return 0 (as argument passing succeeded) or could have side effect'
   equal '' "$out" 'call_fct_arg --opt value no out'
 
   # -- 7: -f 1

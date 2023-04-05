@@ -12,7 +12,7 @@ start_test_function(){
   >&2 echo -e "\n-- Testing ${cpurple}$1$cend$rest"
   export g_junit_function=$*
   export gi_junit_n=1
-  # TODO latter this will register failure to get easyer navigation
+  # TODO latter this will register failure to get easier navigation
 }
 
 

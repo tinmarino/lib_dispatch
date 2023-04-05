@@ -13,7 +13,7 @@ fi
 
 
 # Declare dependencies
-depend perr substract_array get_fct_docstring
+depend perr subtract_array get_fct_docstring
 
 
 test_function_unit_dispatch_fill_fct_dic(){

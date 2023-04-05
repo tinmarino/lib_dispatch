@@ -46,7 +46,7 @@ test_function_unit_misc_get_all_opt(){
   get_all_opt_alias
   equal 0 $? "get_all_opt_alias never fails, here called with empty srtring as option value" \
     --desc "Called with $*"
-  equal "" "$param1" "get_all_opt_alias should have reseted param1 as it was explicited" \
+  equal "" "$param1" "get_all_opt_alias should have reset param1 as it was explicited" \
     --desc "Called with $*"
 }
 

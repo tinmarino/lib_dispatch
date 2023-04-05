@@ -101,7 +101,7 @@ run(){
 
   # Exec
   if ((g_dispatch_b_run)); then
-    # If a single assigment, use the declare trick
+    # If a single assignment, use the declare trick
     # -- Avoid: bash: line 899: array=Array1-BLC: command not found
     # -- Ref: https://stackoverflow.com/questions/229551
     if (( 1 == $# )) && [[ ! "$cmd_msg" =~ [[:space:]] ]] && [[ "$cmd_msg" =~ = ]]; then
@@ -151,7 +151,7 @@ print_script_end(){
   # Clause
   ((g_dispatch_b_print==0)) && return 0
 
-  # Calcultate time
+  # Calculate time
   local -i i_ret=${1:--1}
   shift
   local sec_time=-1
@@ -271,7 +271,7 @@ print_unindent(){
 
   # Check: awk command must be present
   if ! command -v awk > /dev/null; then
-    perr "print_unindent function requries awk command" \
+    perr "print_unindent function requires awk command" \
       "Tip: apt install gawk"
   fi
 
@@ -363,7 +363,7 @@ columnize(){
     Depends on: perr get_opt
     Requires: awk
     Arg --col: coma separated list of column size len except the last column. Defaults to 20,30,30,30...
-    Arg --ofs --ifs --fs: Output, Input, and generic Field Separator. The generic sets OFS and IFS. These defined how celles are split or join
+    Arg --ofs --ifs --fs: Output, Input, and generic Field Separator. The generic sets OFS and IFS. These defined how cells are split or join
   '
   # Get in: Field separators
   local fs=$(get_opt --fs "$@")
@@ -377,7 +377,7 @@ columnize(){
   # Get in: Columns
   local col=$(get_opt --col "$@")
 
-  # Clause requries awk
+  # Clause requires awk
   if ! command -v awk > /dev/null; then
     perr "columnize function requires awk command" \
       "Tip: apt install gawk"
@@ -431,7 +431,7 @@ columnize(){
       a_cumulated[i] = a_desired[i] + a_cumulated[i-1]
     }
 
-    # Mesure line lengh
+    # Measure line length
     for (i=1; i<=i_col; i++) {
       a_len[i] = length($i);
     }
@@ -502,7 +502,7 @@ ping_all_fork(){
     callback=__ping_all_callback
   fi
 
-  # Get optinal ssh
+  # Get optional ssh
   local b_ssh=$(get_opt --ssh "$@")
   local b_ssh=${b_ssh%% *}
   if [[ -n "$b_ssh" ]]; then
@@ -650,7 +650,7 @@ shell_execute(){
 #########
 check_requirement(){
   : 'Utility to check if requirements are present on the machine
-    Call: before runnning a command
+    Call: before running a command
     Side Effect: may exit
     :param: alma_sw -> ALMA Software present in ALMA_SW directory
     :param: alma_branch -> ALMA Software is in BRANCH branch (called with alma_sw)
@@ -718,7 +718,7 @@ check_requirement(){
 
 declare -gA gd_bash_parallel_command=() gd_bash_parallel_stdout=() gd_bash_parallel_status=()
 bash_parallel(){
-  : 'Run job in parrallel and harvest output and status
+  : 'Run job in parallel and harvest output and status
     Global <in>  gd_bash_parallel_command: id->command
     Global <out> gd_bash_parallel_stdout: id->stdout
     Global <out> gd_bash_parallel_status: id->status
@@ -775,10 +775,10 @@ bash_parallel(){
 
 
 # Depends on nothing, not even logger
-# No undesired side, efect
+# No undesired side, effect
 # A jewel
 # shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
-# shellcheck disable=SC2154  # Last_arg referenced but not asigned false +
+# shellcheck disable=SC2154  # Last_arg referenced but not assigned false +
 alias get_all_opt_alias='
   local arg=""
   local last_arg=""
@@ -801,7 +801,7 @@ alias get_all_opt_alias='
 
 get_opt(){
   : 'Get named parameter, initial function, tested
-    -- Print long argument <arg1:string> options from paramters following arguments
+    -- Print long argument <arg1:string> options from parameters following arguments
     -- In case of duplication, the last defined option wins
     Depends on: perr
     Ex: get_opt --param arg1 arg2 --param arg3 arg4 --param2 arg5 # Out: arg3 arg4
@@ -854,7 +854,7 @@ print_args(){
 
 vcp(){
   : 'Variable CoPy, tested
-    -- Can copy integer, string, array or dictionnary
+    -- Can copy integer, string, array or dictionary
     WARNING: Do not declare destination variable as local before, as it will be global
     -- do not even declare it at all for bash <= 4.2 (RH7)!
     Arg1: Name of existing Source-Variable
@@ -891,7 +891,7 @@ fcp(){
 #  '
 # Cannot put in function as getting its output creates a subshell
 # shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
-# shellcheck disable=SC2154  # Last_arg referenced but not asigned false +
+# shellcheck disable=SC2154  # Last_arg referenced but not assigned false +
 alias get_dummy_fd_alias='
   local -i fd=0
   if [[ "$OSTYPE" == linux* ]]; then
@@ -909,7 +909,7 @@ alias get_dummy_fd_alias='
 bash_sleep(){
   : 'Sleep arg1 seconds. Like the sleep command but pure bash
   Arg1: Sleep time <float as string with dot> (ex: 2.3)
-  Global: gfd_bash_sleep  # Global file descripor to lock on
+  Global: gfd_bash_sleep  # Global file descriptor to lock on
   Depends on: get_dummy_fd
   Ex: bash_sleep 0.03
   From: https://github.com/dylanaraps/pure-bash-bible#use-read-as-an-alternative-to-the-sleep-command
@@ -988,7 +988,7 @@ get_os(){
 
 bash_timeout(){
   : "Run a command with a timeout, async, tested
-    -- Like timeout command but suports functions
+    -- Like timeout command but supports functions
     Standalone
     Warning do not put single-quote for easier test
     Side-effect, the function is run in subshell
@@ -1220,7 +1220,7 @@ equal(){
   local -a a_tip=()  # Long tips if fails
   local -i b_not=0  # Not boolean if condition reversed
   local -i b_quiet=0  # DO not print in case os success
-  local -i i_depth=1  # Depth of the asssert call, inited ot 1 supposing the worker directly calls assert
+  local -i i_depth=1  # Depth of the assert call, inited ot 1 supposing the worker directly calls assert
   while (( 0 != $# )); do
     case $1 in
       --desc)
@@ -1304,7 +1304,7 @@ equal(){
   # Remove newlines
   stdout_line="${stdout_line//$'\n'/;}\n"
 
-  # Potencial verbose additional lines
+  # Potential verbose additional lines
   if [[ -v ART_VERBOSE ]] && (( ART_VERBOSE > 0 )); then
     # Add description
     local desc
@@ -1389,7 +1389,7 @@ if [[ -v BASH_SOURCE ]] && (( ${#BASH_SOURCE[@]} > 0 )) && [[ "${BASH_SOURCE[0]}
   dispatch "$@"; exit $?;
 fi
 
-# Declare functions to hide (after) the potencial call
+# Declare functions to hide (after) the potential call
 if [[ ( -v arg && dispatch == "$arg" ) \
     || ( -v IRM_JENKINS_SSH_SUBCOMMAND && dispatch == "$IRM_JENKINS_SSH_SUBCOMMAND" ) \
     ]]; then
@@ -1398,7 +1398,7 @@ if [[ ( -v arg && dispatch == "$arg" ) \
 else
   # shellcheck disable=SC2034  # unused variable
   readarray -t g_dispatch_a_fct_to_hide < <(declare -F -p | cut -d " " -f 3)
-  readarray -t g_dispatch_a_fct_to_hide < <(substract_array "${g_dispatch_a_fct_to_hide[@]}" -- mm_doc_api mm_at __complete_mm_at)
+  readarray -t g_dispatch_a_fct_to_hide < <(subtract_array "${g_dispatch_a_fct_to_hide[@]}" -- mm_doc_api mm_at __complete_mm_at)
 fi
 
 # In order to single source as ssh (see --at, ICT-18899)

@@ -62,7 +62,7 @@ start_test_function "dispatch --at (via dispatch)"
   # Test return status
   bash_timeout 2 "$gs_root_path"/dispatch --at localhost example fail &> /dev/null
   equal 42 $? "--at: Return Status: Command: dispatch --at localhost example fail: should return status 42" \
-    --desc "Command should return my failure <= This prooves that the exit status is well transmited with the --at option" \
+    --desc "Command should return my failure <= This proves that the exit status is well transmitted with the --at option" \
     --tip "Run: 'ssh localhost' <= Maybe you cannot connect to ssh" \
     --tip "Run: 'ssh-keygen -t rsa' <= You must a key pair if above command failed with: ssh-copy-id no identities found error" \
     --tip "Run: 'ssh-copy-id localhost' <= You do not want to type password everytime" \
@@ -91,7 +91,7 @@ start_test_function "dispatch --at (via dispatch)"
     --desc "Command should fail with status=E_ARG if given an unreachable server as parameter (here totototot)"
   equal "" "$out" "Previous command (with unreachable server) should have no stdout, only perr used"
 
-  # Unkown command
+  # Unknown command
   out=$(bash_timeout 1 "$gs_root_path"/dispatch --at localhost totototo 2> /dev/null)
   equal "$E_ARG" $? "dispatch --at localhost totototo" \
     --desc "Command should fail with wrong args (E_ARG) <= given an unknown subcommand"

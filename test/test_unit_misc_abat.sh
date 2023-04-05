@@ -20,7 +20,7 @@ test_unit_misc_abat(){
   [[ "$out" =~ unk_string ]]; equal 0 $? 'abat do not highlight an unknown string'
 
   # -- 2: No in no out
-  # Comment out as not wokring if bat not installed, there are some escape sequences
+  # Comment out as not working if bat not installed, there are some escape sequences
   # -- out=$(echo -n | abat); equal 0 $? 'abat never fails'
   # -- [[ -z "$out" ]]; equal 0 $? 'abat no in no out'
 

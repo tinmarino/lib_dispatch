@@ -477,7 +477,7 @@ new_test_file(){
   if is_in_array -f "$@"; then
     b_force=1
     local -a a_arg=()
-    readarray -t a_arg < <(substract_array "$@" -- -f)
+    readarray -t a_arg < <(subtract_array "$@" -- -f)
     set -- "${a_arg[@]}"
   fi
 
@@ -504,7 +504,7 @@ new_test_file(){
   local path="$gs_root_path/test/$filename"
   if (( ! b_force)) && [[ -e "$path" ]]; then
     perr "new_test_file: file $path already exist, please create a new test file or delete this file" \
-      "Tip: new_test_file unit_not_already_exisiting"
+      "Tip: new_test_file unit_not_already_existing"
     return "$E_REQ"
   fi
 
