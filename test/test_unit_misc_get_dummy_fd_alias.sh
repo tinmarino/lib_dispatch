@@ -32,7 +32,7 @@ test_function_unit_misc_get_dummy_fd_alias(){
   # -- Write
   echo "  line  1  " >&"$fd"
   echo "  line  2  " >&"$fd"
-  # -- Read1 shoudl block
+  # -- Read1 should block
   while IFS= read -r -t 0.001 -u "$fd" line; do
     out+=$line$'\n'
   done
