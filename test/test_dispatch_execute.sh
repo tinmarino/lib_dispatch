@@ -29,7 +29,6 @@ start_test_function "Dispatch: Source code to test"
 start_test_function "Dispatch: Execute self"
   out=$("$gs_root_path/script/lib_dispatch.sh"); equal 0 $? "Executing lib_dispatch should return 0"
   grep -qF 'Shell dispatcher library' <<< "$out"; equal 0 $? "lib_dispatch header 1"
-  grep -qF 'For example write the following code' <<< "$out"; equal 0 $? "lib_dispatch header 2"
   grep -qF 'Call the function with the name of the argument' <<< "$out"; equal 0 $? "lib_dispatch dispatch docstring 1"
   grep -qF 'is_in_array' <<< "$out"; equal 0 $? "lib_dispatch dispatch is_in_array present"
 

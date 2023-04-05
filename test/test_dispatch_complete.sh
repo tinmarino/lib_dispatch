@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Test dipatch autocompletion feature
 
-
 # Source test utilities
  export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
  gs_root_path="$(dirname "$gs_root_path")"
@@ -24,7 +23,7 @@ start_test_function "Completion"
   }
   cmd="complete -p dispatch"
   expect="complete -C 'dispatch' dispatch"
-  equal "$expect" "$(print_subresult "$cmd")" "Competion must be in current shell: if not ok, please put the same command in your bashrc: $expect"
+  equal "$expect" "$(print_subresult "$cmd")" "Completion must be in current shell: if not ok, please put the same command in your bashrc: $expect"
 
 
 start_test_function "Completion dispatch ex"

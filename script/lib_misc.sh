@@ -1110,7 +1110,7 @@ print_stack(){
   shopt -q extdebug || echo "# Note: run 'shopt -s extdebug' to see call arguments"
   # For each frame
   for i_frame in "${!FUNCNAME[@]}"; do
-    # Clause fo not work after stack size
+    # Clause for not work after stack size
     [[ ! -v BASH_LINENO ]] && break
     (( i_frame > ${#BASH_LINENO[@]} )) && break
     (( i_frame > ${#FUNCNAME[@]} )) && break
@@ -1220,7 +1220,7 @@ equal(){
   local -a a_tip=()  # Long tips if fails
   local -i b_not=0  # Not boolean if condition reversed
   local -i b_quiet=0  # DO not print in case os success
-  local -i i_depth=1  # Depth of the assert call, inited ot 1 supposing the worker directly calls assert
+  local -i i_depth=1  # Depth of the assert call, inited at 1 supposing the worker directly calls assert
   while (( 0 != $# )); do
     case $1 in
       --desc)

@@ -456,7 +456,7 @@ call_fct_arg(){
     "${a_fct_to_run[@]}"; res=$?
   fi
 
-  # Print Bye, only onces (the first one)
+  # Print Bye, only once (the first one)
   if ((gi_first_dispatch < 2)); then
     gi_first_dispatch=2
     # Print

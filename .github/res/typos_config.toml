@@ -1,0 +1,6 @@
+# Respect ignore files.
+files.ignore-files = true
+
+default.extend-ignore-re = [
+  "--hel",
+]

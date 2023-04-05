@@ -110,8 +110,8 @@ startup(){
 
 
 depend(){
-  pinfo "Depend is not implemented already"
-  pinfo "-- But this would depends on $*"
+  pinfo "Depend is not implemented already" \
+    "-- But this would depends on $*"
 }
 
 
