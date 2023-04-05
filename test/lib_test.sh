@@ -73,6 +73,42 @@ art_parallel_suite(){
 }
 
 
+startup(){
+  : 'To clean state between test'
+  unset mm_opt m_f toto titi &> /dev/null
+  declare -ga g_dispatch_a_fct_to_hide=()  # Array of already defined function to hide (Filled by lib_dispatch)
+  declare -ga g_dispatch_a_dispach_args=()  # Array of arguments given by the first user command
+  declare -gA g_dispatch_d_fct_default=()  # Default functions defined by hardcode
+  readarray -t g_dispatch_a_fct_to_hide < <(declare -F -p | cut -d " " -f 3)
+  : "${g_dispatch_a_dispach_args[*]}"
+  : "${g_dispatch_d_fct_default[*]}"
+  : "${g_dispatch_a_fct_to_hide[*]}"
+  mm_opt(){
+    : 'Option'
+    declare -g OPT=$1; : "$OPT"
+    return 1
+  }
+  m_f(){
+    : 'Flag'
+    declare -g FLAG=flag; : "$FLAG"
+    return 0
+  }
+  toto(){
+    : 'Doc  toto
+      two lines
+    '
+    echo "grepme-toto:$OPT:$FLAG:$*|"
+    return 0
+  }
+  titi(){
+    : 'Doc  titi'
+    echo "grepme-titi:$OPT:$FLAG:$*|"
+    return 42
+  }
+  declare -g OPT='' FLAG=''
+}
+
+
 depend(){
   pinfo "Depend is not implemented already"
   pinfo "-- But this would depends on $*"

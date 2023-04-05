@@ -64,7 +64,7 @@ file_to_dic(){
     -- -- to be compatible with before Bash < 4.3 (without the declare -n feature)
     -- Not asynchronous safe
 
-    Depends on: vcp
+    Depends on: perr vcp
     Arg1: (in) file path name
     Arg2: <opt> (out) dictionary bash variable name (must declare it before with declare -A)
     Glogal: gd_from_file <output>
@@ -153,6 +153,7 @@ print_unindent(){
     in=$(</dev/stdin)
   fi
 
+  # Check: awk command must be present
   if ! command -v awk > /dev/null; then
     perr "print_unindent function requries awk command" \
       "Tip: apt install gawk"

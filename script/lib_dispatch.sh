@@ -180,6 +180,7 @@ register_subcommand_from_gd_cmd(){
     Depends on: get_file_docstring
     Global: g_dispatch_d_fct (out)
     Global: g_dispatch_d_cmd (in)
+    Standalone
     From: https://stackoverflow.com/a/20018504/2544873
     # The sync version
     for cmd in "${!g_dispatch_d_cmd[@]}"; do
@@ -215,7 +216,7 @@ register_subcommand_from_gd_cmd(){
 fill_fct_dic(){
   : 'Internal: Fill g_dispatch_d_fct the Global Dictionary of defined functions, tested
     -- coded with asyncronic pipe redirection (fork-join)
-    Depends on: substract_array and get_fct_docstring
+    Depends on: substract_array get_fct_docstring
     Global: g_dispatch_d_fct (out) dict<functions,docstring> where functions are the ones declared in calling script
     Global: g_dispatch_d_fct_default (in) dict<functions,docstring> where default functions are defined
     Global: g_dispatch_a_fct_to_hide (in) array<functions> where function already defined in parent shell must be hideen
@@ -249,6 +250,7 @@ call_fct_arg(){
     Global: gi_first_dispatch (in)
     Global: g_dispatch_b_complete (in)
     Return: same as next call
+    Depends on: perr is_in_array print_complete_main print_usage_main mm_at print_usage_main
     ==> Here is the big command line parser, crafter <==
   '
   local -a args=("$@")
@@ -629,6 +631,7 @@ print_usage_fct(){
     Arg1: format <string>: complete, help, doc
     Arg2: type <string>: option, function, all
     Global: g_dispatch_d_fct (in:dict) containing functions (key) and their docstring (value)
+    Depends on: perr is_in_array colorize_docstring
   '
   local format="${1:---help}"
   local type="${2:-function}"
@@ -638,7 +641,7 @@ print_usage_fct(){
   # Check in: g_dispatch_d_fct must exist or error
   if [[ ! "$(declare -p g_dispatch_d_fct 2> /dev/null)" =~ ^declare[[:space:]]-A ]]; then
     perr 'The dictionary g_dispatch_d_fct must exist (and be filled)' \
-      'Tip: declare -gA gf_fct=(); fill_fct_fic'
+      'Tip: declare -gA gf_fct=(); fill_fct_dic'
     return "$E_REQ"
   fi
 
@@ -734,6 +737,8 @@ print_usage_env(){
     Arg3: indent
     Arg4: value: can be default, current to print default or current value (default: default)
     Global: __set_env function <in>
+    Depends on: perr
+    Requires: awk
   '
   local i_indent="${3:-0}"
   local value="${4:-default}"
@@ -741,6 +746,12 @@ print_usage_env(){
 
   # Check in: (silent) __set_env function must be defined
   [[ function != "$(type -t __set_env)" ]] && return 0
+
+  # Check: awk command must be present
+  if ! command -v awk > /dev/null; then
+    perr "print_unindent function requries awk command" \
+      "Tip: apt install gawk"
+  fi
 
   declare -f __set_env \
     | awk -v cpurple="\\$cpurple" -v cend="\\$cend" \
@@ -835,9 +846,17 @@ get_file_docstring(){
   : 'Read first lines of script to retrieve it header, tested
     Arg1: <string> filename
     Arg2: <string> format: long or short (default)
+    Depends on: perr is_in_array colorize_docstring
+    Requires: awk
   '
   local filename="$1"
   local format="${2:-short}"
+
+  # Check: awk command must be present
+  if ! command -v awk > /dev/null; then
+    perr "get_file_docstring function requries awk command" \
+      "Tip: apt install gawk"
+  fi
 
   # Check in: file must exist, for example with --at the filename is "bash"
   # -- Prevents error: awk: fatal: cannot open file `bash' for reading (No such file or directory)
@@ -889,6 +908,7 @@ get_fct_docstring(){
   : 'Get the docstring of one function (arg1), tested
     -- Fetching comment like this very docstring (: "comment")
     Arg1: name of the function to get docstring from (it must be declared)
+    Depends on: perr
     Ex: toto(){ :; }; get_fct_docstring toto
   '
   local fct=$1

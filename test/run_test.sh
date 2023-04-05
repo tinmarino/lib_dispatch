@@ -32,6 +32,7 @@ main(){
   local -A d_status=()  # Array exit status
   #local -a a_fd_summary=()  # Array of child summary to return (list of errors)
   local -a a_test_file=()  # Array of test file name to execute
+  local -a a_key_sorted=()  # For better output
   local test_file='' key=''
 
 
@@ -46,11 +47,14 @@ main(){
     # From https://unix.stackexchange.com/a/246103/257838
     export GLOBIGNORE=''
 
-    # A.1. Dispatch function
-    a_test_file+=("$gs_root_path"/test/test_dispatch_function*.sh)
+    # 2/ Equal function
+    a_test_file+=("$gs_root_path"/test/test_unit_misc_equal.sh)
 
-    # A.2. All dispatch
-    GLOBIGNORE+="$gs_root_path/test/test_dispatch_function*.sh:"
+    # 1/ Dispatch unit tests
+    a_test_file+=("$gs_root_path"/test/test_unit_dispatch*.sh)
+
+    # 2/ All unit tests
+    GLOBIGNORE+="$gs_root_path/test/test_dispatch_function*.sh:$gs_root_path/test/test_unit_misc_equal.sh:"
     a_test_file+=("$gs_root_path"/test/test_dispatch*.sh)
 
     # C/ Subcommands but not dispatch
@@ -216,9 +220,20 @@ main(){
   # for bash-4.2 that has trouble to get status
   (( res == 0 )) && [[ -n "$err_summary" ]] && res=1
 
+  # Sort keys
+  local -a a_key1=() a_key2=() a_key3=() a_key9=()
+  for key in "${!d_test_file[@]}"; do
+    [[ "$key" == unit_dispatch* ]] && { a_key1+=("$key"); continue; }
+    [[ "$key" == unit_misc* ]] && { a_key2+=("$key"); continue; }
+    [[ "$key" == dispatch* ]] && { a_key3+=("$key"); continue; }
+    a_key9+=("$key")
+  done
+  a_key_sorted=("${a_key1[@]}" "${a_key2[@]}" "${a_key3[@]}" "${a_key9[@]}")
+
+
   # Write file summary
   echo -e "\n\nFile Summary\n============================="
-  local -a a_col=(30 20 3)
+  local -a a_col=(30 7 3)
   local format1="| %-${a_col[0]}s | %-${a_col[1]}s | %-${a_col[2]}s |\n"
   # Each cell take 3, the last 1
   # 25 + 20 + 3 + 3 * 3 + 1 = 5
@@ -227,9 +242,9 @@ main(){
   printf "$format1" "File" "Result" "Sts"
   printf "$format1" \
     "$(printf -- '-%.0s' {1..30})" \
-    "$(printf -- '-%.0s' {1..20})" \
+    "$(printf -- '-%.0s' {1..7})" \
     "$(printf -- '-%.0s' {1..3})"
-  for key in "${!d_test_file[@]}"; do
+  for key in "${a_key_sorted[@]}"; do
     [[ async == "$key" ]] && continue
     local color='' tail=''
     local -i status=${d_status[$key]}
