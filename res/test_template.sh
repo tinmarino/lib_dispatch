@@ -17,7 +17,7 @@ depend perr
 
 test_placeholder_funcname(){
   : 'Test placeholder_funcname'
-  equal 0 0 "TODO implement test"
+  equal 0 0 "Fillme with implemented tests"
 }
 
 

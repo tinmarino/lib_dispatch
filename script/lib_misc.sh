@@ -174,7 +174,7 @@ print_script_end(){
 
 
 file_to_dic(){
-  : '305/ Read file to a bash associative array, TODO test
+  : '305/ Read file to a bash associative array, tested
     -- file lines must look like value=potencialy quoted fields to
     -- Must copy array to get a reference to it
     -- -- to be compatible with before Bash < 4.3 (without the declare -n feature)
@@ -288,7 +288,7 @@ print_unindent(){
 
 
 wait_pid_array(){
-  : 'Wait for all pid in array in, TODO refactor async API
+  : 'Wait for all pid in array in, tested
     Return: 0 <= All OK
     Standalone
     From: https://stackoverflow.com/a/43776775/2544873
@@ -659,7 +659,6 @@ check_requirement(){
     :param: variable:VAR1:var2 -> VAR1 and var2 variables exist and is not void
     :param: command:python:docker -> python and docker commands exist
   '
-  # TODO create an helper function to safely retrieve variable with readarray
   local -i res=0
   local arg='' s_varname=''
   local -a a_variable_name=()
@@ -861,7 +860,6 @@ vcp(){
     Arg2: Name for the Copy-Target
     Ex: toto=42; vcp toto titi; echo dollar_titi
     From: https://stackoverflow.com/a/52651361/2544873
-    TODO test with example in web
   '
   local var=$(declare -p "$1")
   var=${var/declare /declare -g }
@@ -890,6 +888,7 @@ fcp(){
 #    TODO test
 #  '
 # Cannot put in function as getting its output creates a subshell
+# Standalone
 # shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
 # shellcheck disable=SC2154  # Last_arg referenced but not assigned false +
 alias get_dummy_fd_alias='
