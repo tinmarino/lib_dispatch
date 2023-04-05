@@ -42,9 +42,22 @@ fi
 chmod +x test.sh
 complete -o nosort -C ./test.sh ./test.sh  # Add completion to you shell
 ./test.sh  # Time to play
+./test.sh my_function
 ```
 
 # Details
+
+Include me, declare some user functions and then call:
+
+| Function            | Description |
+| ---                 | --- |
+| dipatch             | call at end of script |
+| register_subcommand | call to register a subcommand |
+| __default           | autocalled if no argument |
+| __at_init           | autocalled before |
+| __at_finish         | autocalled after |
+| __set_env           | autoparsed for documentation, call it yourself |
+| __complete_toto     | autocalled when completing toto function |
 
 This interecting file is [lib_dispatch.sh](./script/lib_dispatch.sh).
 

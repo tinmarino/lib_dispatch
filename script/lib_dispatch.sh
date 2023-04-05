@@ -1,42 +1,12 @@
 #!/usr/bin/env bash
-  # Shell dispatcher library
-  # Include me, declare some user functions and then call:
-  #
-  # * dipatch      call at end of script
-  # * register_subcommand  call to register a subcommand
-  # * __default    autocalled if no argument
-  # * __at_init    autocalled before
-  # * __at_finish  autocalled after
-  # * __set_env    parsed for documentation, call it yourself
-  # * __complete_toto   autocalled when completing toto subcommand
-  #
-  # For example write the following code in a file:
-  # ```bash
-  # # File main.sh
-  # source lib_dispatch.sh
-  # toto(){
-  #   : "Docstring to claim that toto is innocent"
-  #   echo toto; return 0
-  # }
-  # titi(){ echo titi; return 1; }
-  # dispatch "$@"
-  # ```
-  #
-  # Then call it like:
-  # ```bash
-  # main.sh toto; echo \$?  # Prints toto; 0
-  # main.sh titi; echo \$?  # Prints titi; 1
-  # main.sh --help  # or --complete, --doc
-  # EOF
-  # ```
-  # ==> No matter the altitude, what counts is the slope <==
+# Shell dispatcher library
 
-  # shellcheck disable=SC2016  # Expressions don't expand in single quotes, use double quotes for that
+# shellcheck disable=SC2016  # Expressions don't expand in single quotes, use double quotes for that
 
 ##########
 # Global
 
-  # Capute epoch of sourcing
+  # Capture epoch of sourcing
   declare -g g_dispatch_start_time  # Epoch of sourcing
   # shellcheck disable=SC2034  # g_dispatch_start_time appears unused
   printf -v g_dispatch_start_time '%(%s)T' -1  # Faster than date command
@@ -562,9 +532,6 @@ print_usage_main(){
     (( ${#a_fct_num_noo[@]} )) && printf '%s\n' "${a_fct_num_noo[@]}" | grep "$is_mm"
   )
 
-  # log "Fct sorted: ${ga_fct_sorted[*]}"
-  # log "Fct unsorted: ${a_fct_unsorted[*]}"
-
   # Clause: leave early if completing
   if [[ --complete == "$format" ]]; then
     print_usage_fct --complete all "${ga_fct_sorted[@]}"
@@ -618,7 +585,7 @@ print_usage_main(){
 
 print_usage_fct(){
   : 'Print functon description, tested
-    Big formating BaZar
+    Big formating bazar
     Depends on: colorize_docstring
     Arg1: format <string>: complete, help, doc
     Arg2: type <string>: option, function, all
