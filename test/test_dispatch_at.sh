@@ -23,7 +23,6 @@ fingerprint(){
 
 # Prepare
 install_ssh_ubuntu(){
-  echo Tin1
   fingerprint
 
   sudo apt install openssh-server
@@ -39,7 +38,6 @@ install_ssh_ubuntu(){
   #ssh-copy-id "$USER@$HOSTNAME"
   sudo systemctl restart ssh
 
-  echo Tin2
   fingerprint
 }
 
@@ -61,8 +59,9 @@ fi
 
 
 start_test_function "dispatch --at (via dispatch)"
+  # Test return status
   bash_timeout 2 "$gs_root_path"/dispatch --at localhost example fail &> /dev/null
-  equal 42 $? "dispatch --at localhost example fail" \
+  equal 42 $? "--at: Return Status: Command: dispatch --at localhost example fail: should return status 42" \
     --desc "Command should return my failure <= This prooves that the exit status is well transmited with the --at option" \
     --tip "Run: 'ssh localhost' <= Maybe you cannot connect to ssh" \
     --tip "Run: 'ssh-keygen -t rsa' <= You must a key pair if above command failed with: ssh-copy-id no identities found error" \
@@ -72,15 +71,15 @@ start_test_function "dispatch --at (via dispatch)"
     --tip "Run: 'sudo apt install openssh-server' <= Maybe ssh service is not installed"
 
   bash_timeout 1 "$gs_root_path"/dispatch --at localhost example succeed &> /dev/null
-  equal 0 $? "dispatch --at localhost example succeed" \
+  equal 0 $? "--at: Return Status: Command: dispatch --at localhost example succeed: should succeed" \
     --desc "Command should return success"
 
   bash_timeout 1 "$gs_root_path"/dispatch --at "${USER:-$USERNAME}@localhost" example fail &> /dev/null
-  equal 42 $? "dispatch --at ${USER:-$USERNAME}@localhost example fail" \
+  equal 42 $? "--at: with username: command: dispatch --at ${USER:-$USERNAME}@localhost example fail: should return 42" \
     --desc "Command should return my failure"
 
   bash_timeout 1 "$gs_root_path"/dispatch --at "${USER:-$USERNAME}@$HOSTNAME" example fail &> /dev/null
-  equal 42 $? "dispatch --at ${USER:-$USERNAME}@$HOSTNAME example fail" \
+  equal 42 $? "--at: dispatch --at ${USER:-$USERNAME}@$HOSTNAME example fail" \
     --desc "Command should return my failure (at USER@HOSTNAME)" \
     --tip "Run: 'ssh-copy-id ${USER:-$USERNAME}@$HOSTNAME' <= You do not want to type password everytime" \
     --tip "Run: 'vim /etc/hostname /etc/hosts'"

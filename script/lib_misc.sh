@@ -14,9 +14,17 @@ declare -g VERSION_DISPATCH=0.1.0
 # shellcheck disable=SC2016  # Expressions don't expand in single quotes, use double quotes for that
 : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
 
-: "${cfend:=''}" "${cend:=''}" "${cbold:=''}" "${cunderline:=''}" "${cred:=''}" "${cgreen:=''}" "${cyellow:=''}" "${cblue:=''}" "${cpurple:=''}"
+: "${cfend:=''}" "${cend:=''}" "${cbold:=''}" "${cunderline:=''}" "${cred:=''}" "${cgreen:=''}" "${cyellow:=''}" "${cblue:=''}" "${cpurple:=''}" "${g_dispatch_a_dispach_args:=}" "${g_dispatch_project_name:=Misc}"
+
 
 : "${g_dispatch_b_complete:=0}"
+
+
+# Globals
+  declare -gi g_dispatch_b_run=1  # Do run command in run
+  # --silent) g_dispatch_b_print=0;;
+  # s) g_dispatch_b_print=0;;
+  declare -gi g_dispatch_b_print=1  # Do print command before run in run
 
 ##########
 # 4/ High level: Completion, Help, Doc
@@ -56,6 +64,114 @@ get_os_name(){
 
 ########################
 # 3/ Mid level utilities <= Depends on other utilities
+
+# 3.1 Run
+
+run(){
+  : '301/ Print to stderr and run command passed as array reference, tested
+    Depends: escape_array
+    Argument: The full argument array $@ is used as a command to run
+    Global: g_dispatch_b_print: (in) print if not 0
+    Global: g_dispatch_b_run: (in) run if not 0
+    Return: executed command output
+  '
+  local cmd_msg=$(escape_array "$@")
+  local -i res=0
+
+  IFS=" " read -r -a info <<< "$(caller 0)"
+  set +u
+  local line="${info[0]}"
+  local fct="${info[1]}"
+  local file="$(basename "${info[2]}")"
+
+  # Craft message
+  local msg=''
+  msg+="${cpurple}$g_dispatch_project_name: Running:$cend $cyellow$cmd_msg$cend"
+  msg+="\n      #"
+  msg+=" ${cblue}Pwd:$cend '$PWD'"
+  msg+=" ${cblue}Time:$cend '$(date "+%Y-%m-%dT%H:%M:%S")'"
+  msg+=" ${cblue}Function:$cend '$fct'"
+  msg+=" ${cblue}File:$cend '$file:$line'"
+
+  # Print
+  ((g_dispatch_b_print)) && >&2 echo -e "$msg"
+
+  # Clause to not run nothing
+  [[ "$cmd_msg" =~ ^[[:space:\']]*$ ]] && return 0
+
+  # Exec
+  if ((g_dispatch_b_run)); then
+    # If a single assigment, use the declare trick
+    # -- Avoid: bash: line 899: array=Array1-BLC: command not found
+    # -- Ref: https://stackoverflow.com/questions/229551
+    if (( 1 == $# )) && [[ ! "$cmd_msg" =~ [[:space:]] ]] && [[ "$cmd_msg" =~ = ]]; then
+      # Remove surrounding quotes
+      cmd_msg=${cmd_msg:1:-1}
+      declare -g "$cmd_msg"
+    else
+      eval "$cmd_msg"  # ; ((PIPESTATUS[0]==0))"
+      res=$?
+    fi
+  fi
+
+  return "$res"
+}
+
+
+
+
+# 3.2 Helper
+
+print_script_start(){
+  : '303/ Print: script starting => for log, tested
+    Global: g_dispatch_start_time <out> used by companion function print_script_end
+    Global: g_dispatch_a_dispach_args <in> to print, set by dispatcher
+    Global: g_dispatch_b_print <in> do not print if set to 0
+  '
+  # Clause
+  ((g_dispatch_b_print==0)) && return 0
+
+  # This one is global so that script end can get it
+  declare -g g_dispatch_start_time=$(date +%s)
+
+  # Hi
+  >&2 echo -e "${cgreen}--------------------------------------------------------"
+  >&2 echo -e "--> $g_dispatch_project_name: Starting: ${g_dispatch_a_dispach_args[*]} at: $(date "+%Y-%m-%dT%H:%M:%S")"
+  >&2 echo -e "--------------------------------------------------------$cend"
+}
+
+
+print_script_end(){
+  : '304/ Print: script ending + time elapsed => for log, tested
+    Arg1: return_status
+    Arg[2:]: rest of command line to print
+    Global: g_dispatch_start_time <uin> set by companion function print_script_start
+    Global: g_dispatch_b_print <in> do not print if set to 0
+  '
+  # Clause
+  ((g_dispatch_b_print==0)) && return 0
+
+  # Calcultate time
+  local -i i_ret=${1:--1}
+  shift
+  local sec_time=-1
+  if [[ -v g_dispatch_start_time ]]; then
+    local end_time=$(date +%s)
+    sec_time=$((end_time - g_dispatch_start_time))
+  fi
+
+  # Set color <- error parameter
+  local cmsg="$cgreen"
+  ((i_ret != 0)) && cmsg="$cred"
+
+  # Hi
+  >&2 printf -v script_time '%dh:%dm:%ds' $((sec_time/3600)) $((sec_time%3600/60)) $((sec_time%60))
+  >&2 echo -e "${cmsg}------------------------------------------------------"
+  >&2 echo -e "<-- $g_dispatch_project_name: $(basename "$0"): Ending subcommand \"$*\" with status: $i_ret at: $(date "+%Y-%m-%dT%H:%M:%S")$cend"
+  >&2 echo -e "  # After: $script_time"
+  >&2 echo -e "${cmsg}------------------------------------------------------$cend"
+}
+
 
 file_to_dic(){
   : '305/ Read file to a bash associative array, TODO test

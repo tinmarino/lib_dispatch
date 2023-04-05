@@ -16,7 +16,8 @@ go(){
 
   local -a a_fct_to_test=(
     test_function_main_argument_at_end
-    test_function_main_dry_and_silent
+    # LeagacY: Removed as refactored to misc
+    #test_function_main_dry_and_silent
     test_function_main_help
     test_function_example_help
     test_function_irm_example_doc
@@ -82,7 +83,8 @@ test_function_main_help(){
   is_in_array --help "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --help"
   is_in_array --doc "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --doc"
   is_in_array --silent "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --silent"
-  is_in_array --dry_run "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --dry_run"
+  # Legacy
+  #is_in_array --dry_run "${a_help_key[@]}"; equal 0 $? "command dispatch --help with --dry_run"
 
   return "$g_dispatch_i_res"
 }
@@ -125,8 +127,9 @@ test_function_irm_fork(){
   g_dispatch_i_res=0
 
   description="fork -> source of subcommand via --complete"
-  out=$(command dispatch example -sd fail); equal 42 $? 'command dispatch example -sd fail status again 42'
-  equal '' "$out" "Must have no output with -sd (silent dry_run)"
+  out=$(command dispatch example fail 2> /dev/null); equal 42 $? 'command dispatch example -sd fail status again 42'
+  # Legacy
+  # equal '' "$out" "Must have no output with -sd (silent dry_run)"
 
   # Test also complete at end
   readarray -t a_irm_command < <(command dispatch --complete | grep -o '^[a-z]*')

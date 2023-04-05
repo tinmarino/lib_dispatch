@@ -61,10 +61,6 @@ main(){
     GLOBIGNORE+="$gs_root_path/test/test_alma*.sh:"
     GLOBIGNORE+="$gs_root_path/test/test_art*.sh:"
     a_test_file+=("$gs_root_path"/test/test*.sh)
-
-    # D/ Dispatch bin
-    GLOBIGNORE=''
-    a_test_file+=("$gs_root_path"/test/test_art*.sh)
   else
     local test_file=''
     for test_file; do

@@ -55,8 +55,6 @@
   fi
 
   # Init some default global
-  declare -gi g_dispatch_b_print=1  # Do print command before run in run
-  declare -gi g_dispatch_b_run=1  # Do run command in run
   declare -gi g_dispatch_b_help=0  # Is asking for help
   declare -gi g_dispatch_b_doc=0  # Is asking for doc
   declare -gi g_dispatch_b_complete=0  # Is completing (or asking for complete):  0: no, 1: yes, 2: yes but already done
@@ -65,7 +63,7 @@
 
   declare -gA g_dispatch_d_fct_default=(  # Default functions defined by hardcode
     [mm_silent]="🤫 Do not print executed commands (-s) [available for subcmd]"
-    [mm_dry_run]="🖨️ Only print command instead of executing (-d) [available for subcmd]"
+    #[mm_dry_run]="🖨️ Only print command instead of executing (-d) [available for subcmd]"
     [mm_complete]="❓Print lines with 'subcommand : comment' [available for subcmd]"
     [mm_help]="❓Print this message (-h) [available for subcmd]"
     [mm_doc]="❓Print this message [available for subcmd]"
@@ -123,13 +121,11 @@
     declare -g cpurple=$'\e[38;5;135m'   # Titles
   }
 
+  # shellcheck disable=SC2034  # cfend appears unused
   reset_color(){
-    # shellcheck disable=SC2034  # cfend appears unused
     declare -g cfend=''
     declare -g cend=''
-    # shellcheck disable=SC2034  # cfend appears unused
     declare -g cbold=''
-    # shellcheck disable=SC2034  # cfend appears unused
     declare -g cunderline=''
     declare -g cred=''
     declare -g cgreen=''
@@ -284,14 +280,10 @@ call_fct_arg(){
         --complete) g_dispatch_b_complete=1;;
         --help) g_dispatch_b_help=1;;
         --doc) g_dispatch_b_doc=1;;
-        --silent) g_dispatch_b_print=0;;
-        --dry_run) g_dispatch_b_run=0;;
         -[^-]*)
           while read -r -n1 chr; do
             case $chr in
               h) g_dispatch_b_help=1;;
-              s) g_dispatch_b_print=0;;
-              d) g_dispatch_b_run=0;;
             esac
           done < <(printf '%s' "${arg:1}")
           ;;
@@ -988,57 +980,6 @@ get_fct_docstring(){
 ########################
 # 3/ Mid level utilities <= Depends on other utilities
 
-run(){
-  : '301/ Print to stderr and run command passed as array reference, tested
-    Depends: escape_array
-    Argument: The full argument array $@ is used as a command to run
-    Global: g_dispatch_b_print: (in) print if not 0
-    Global: g_dispatch_b_run: (in) run if not 0
-    Return: executed command output
-  '
-  local cmd_msg=$(escape_array "$@")
-  local -i res=0
-
-  IFS=" " read -r -a info <<< "$(caller 0)"
-  set +u
-  local line="${info[0]}"
-  local fct="${info[1]}"
-  local file="$(basename "${info[2]}")"
-
-  # Craft message
-  local msg=''
-  msg+="${cpurple}$g_dispatch_project_name: Running:$cend $cyellow$cmd_msg$cend"
-  msg+="\n      #"
-  msg+=" ${cblue}Pwd:$cend '$PWD'"
-  msg+=" ${cblue}Time:$cend '$(date "+%Y-%m-%dT%H:%M:%S")'"
-  msg+=" ${cblue}Function:$cend '$fct'"
-  msg+=" ${cblue}File:$cend '$file:$line'"
-
-  # Print
-  ((g_dispatch_b_print)) && >&2 echo -e "$msg"
-
-  # Clause to not run nothing
-  [[ "$cmd_msg" =~ ^[[:space:\']]*$ ]] && return 0
-
-  # Exec
-  if ((g_dispatch_b_run)); then
-    # If a single assigment, use the declare trick
-    # -- Avoid: bash: line 899: array=Array1-BLC: command not found
-    # -- Ref: https://stackoverflow.com/questions/229551
-    if (( 1 == $# )) && [[ ! "$cmd_msg" =~ [[:space:]] ]] && [[ "$cmd_msg" =~ = ]]; then
-      # Remove surrounding quotes
-      cmd_msg=${cmd_msg:1:-1}
-      declare -g "$cmd_msg"
-    else
-      eval "$cmd_msg"  # ; ((PIPESTATUS[0]==0))"
-      res=$?
-    fi
-  fi
-
-  return "$res"
-}
-
-
 print_title(){
   : '302/ Print string and underline, no test needed
     Arg1: [Required] title to print
@@ -1059,55 +1000,6 @@ print_title(){
 
   # End colorize
   echo -e "$cend"
-}
-
-print_script_start(){
-  : '303/ Print: script starting => for log, tested
-    Global: g_dispatch_start_time <out> used by companion function print_script_end
-    Global: g_dispatch_a_dispach_args <in> to print, set by dispatcher
-    Global: g_dispatch_b_print <in> do not print if set to 0
-  '
-  # Clause
-  ((g_dispatch_b_print==0)) && return 0
-
-  # This one is global so that script end can get it
-  declare -g g_dispatch_start_time=$(date +%s)
-
-  # Hi
-  >&2 echo -e "${cgreen}--------------------------------------------------------"
-  >&2 echo -e "--> $g_dispatch_project_name: Starting: ${g_dispatch_a_dispach_args[*]} at: $(date "+%Y-%m-%dT%H:%M:%S")"
-  >&2 echo -e "--------------------------------------------------------$cend"
-}
-
-print_script_end(){
-  : '304/ Print: script ending + time elapsed => for log, tested
-    Arg1: return_status
-    Arg[2:]: rest of command line to print
-    Global: g_dispatch_start_time <uin> set by companion function print_script_start
-    Global: g_dispatch_b_print <in> do not print if set to 0
-  '
-  # Clause
-  ((g_dispatch_b_print==0)) && return 0
-
-  # Calcultate time
-  local -i i_ret=${1:--1}
-  shift
-  local sec_time=-1
-  if [[ -v g_dispatch_start_time ]]; then
-    local end_time=$(date +%s)
-    sec_time=$((end_time - g_dispatch_start_time))
-  fi
-
-  # Set color <- error parameter
-  local cmsg="$cgreen"
-  ((i_ret != 0)) && cmsg="$cred"
-
-  # Hi
-  >&2 printf -v script_time '%dh:%dm:%ds' $((sec_time/3600)) $((sec_time%3600/60)) $((sec_time%60))
-  >&2 echo -e "${cmsg}------------------------------------------------------"
-  >&2 echo -e "<-- $g_dispatch_project_name: $(basename "$0"): Ending subcommand \"$*\" with status: $i_ret at: $(date "+%Y-%m-%dT%H:%M:%S")$cend"
-  >&2 echo -e "  # After: $script_time"
-  >&2 echo -e "${cmsg}------------------------------------------------------$cend"
 }
 
 colorize_docstring(){
@@ -1233,7 +1125,10 @@ escape_array(){
 
 perr(){
   : 'Basic red lof, overloaded by other libs, like lib_misc'
-  >&2 printf "$cred%b$cend\n" "${@}"
+  # shellcheck disable=SC2059  # Don't use variables in the printf format string
+  >&2 echo -n "${cred}Error: "
+  >&2 printf "%b\n" "${@}"
+  >&2 echo "$cend"
 }
 
 
@@ -1360,7 +1255,7 @@ mm_at(){
     echo "export IRM_JENKINS_SSH_SUBCOMMAND='$subcmd'"
     echo "export g_dispatch_project_name='$g_dispatch_project_name'"
     cat "$gs_root_path/script/lib_dispatch.sh" \
-        "$gs_root_path/script/lib_alma.sh" \
+        "$gs_root_path/script/lib_misc.sh" \
         "$subcmd_file"
   ) "$tmp_file"
 

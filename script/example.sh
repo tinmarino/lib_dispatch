@@ -5,10 +5,10 @@
 # ==> Examples draw where precept fails, and sermons are less read than tales (Matt Prior) <==
 
 set -u
-[[ ! -v gi_source_lib_dispatch ]] && {
+[[ ! -v gi_source_lib_misc ]] && {
   [[ ! -v gs_root_path ]] && { gs_root_path=$(readlink -f "${BASH_SOURCE[0]}"); gs_root_path=$(dirname "$gs_root_path"); gs_root_path=$(dirname "$gs_root_path"); }
   # shellcheck disable=SC1091  # Not following
-  source "$gs_root_path"/script/lib_dispatch.sh
+  source "$gs_root_path"/script/lib_misc.sh
 }
 
 
