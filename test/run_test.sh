@@ -17,7 +17,9 @@ declare -gix g_dispatch_i_res=0
 : "${cgreen:=}" "${cred:=}" "${cend:=}"
 
 main(){
-  : "Check dispatch project"
+  : 'Check dispatch project
+    # Ref: Use GLOBIGNORE: https://unix.stackexchange.com/a/246103/257838
+  '
   # TODO warn if remote
   if [[ osx != $(get_os) ]]; then
     # In millisecond
@@ -35,6 +37,13 @@ main(){
   local -a a_key_sorted=()  # For better output
   local test_file='' key=''
 
+  # Clause: test files must be present
+  # See: https://stackoverflow.com/a/34195247/2544873
+  compgen -G "$gs_root_path"/test/test_*sh &> /dev/null || {
+    perr "Check self: Cannot test self <= test files are not present" \
+         "Tip: try to run locally <= test files seems to not have been copied"
+    return "$E_REQ"
+  }
 
   is_in_array async "$@" && b_async=1
 
@@ -43,23 +52,37 @@ main(){
 
   # Get files to test
   if [[ -z "$*" ]] || [[ async == "$*" ]]; then
+    local glob=''
     # A/ Dispatch
-    # From https://unix.stackexchange.com/a/246103/257838
-    export GLOBIGNORE=''
+    GLOBIGNORE="$gs_root_path/test/test_fail.sh:"
 
-    # 2/ Equal function
-    a_test_file+=("$gs_root_path"/test/test_unit_misc_equal.sh)
+    # 0/ Equal function
+    glob="$gs_root_path/test/test_unit_misc_equal.sh"
+    # shellcheck disable=SC2206  # Quote to prevent word splitting/globbing
+    # -- Okay as it is a glob pattern
+    a_test_file+=($glob)
+    GLOBIGNORE+="$glob:"
+
+    # 0/ Run Test script
+    glob="$gs_root_path/test/test_run_test.sh"
+    # shellcheck disable=SC2206  # Quote to prevent word splitting/globbing
+    # -- Okay as it is a glob pattern
+    a_test_file+=($glob)
+    GLOBIGNORE+="$glob:"
 
     # 1/ Dispatch unit tests
-    a_test_file+=("$gs_root_path"/test/test_unit_dispatch*.sh)
+    glob="$gs_root_path/test/test_unit_dispatch*.sh"
+    # shellcheck disable=SC2206  # Quote to prevent word splitting/globbing
+    a_test_file+=($glob)
+    GLOBIGNORE+="$glob:"
 
     # 2/ All unit tests
-    GLOBIGNORE+="$gs_root_path/test/test_dispatch_function*.sh:$gs_root_path/test/test_unit_misc_equal.sh:"
-    a_test_file+=("$gs_root_path"/test/test_dispatch*.sh)
+    glob="$gs_root_path/test/test_unit_*.sh"
+    # shellcheck disable=SC2206  # Quote to prevent word splitting/globbing
+    a_test_file+=($glob)
+    GLOBIGNORE+="$glob:"
 
     # C/ Subcommands but not dispatch
-    GLOBIGNORE+="$gs_root_path/test/test_alma*.sh:"
-    GLOBIGNORE+="$gs_root_path/test/test_art*.sh:"
     a_test_file+=("$gs_root_path"/test/test*.sh)
   else
     local test_file=''
@@ -75,6 +98,9 @@ main(){
     done
   fi
 
+  # Restore env
+  export GLOBIGNORE=$globignore_save
+
   # Create keys
   for test_file in "${a_test_file[@]}"; do
     key=${test_file#"$gs_root_path"}
@@ -85,16 +111,21 @@ main(){
     d_test_file[$key]=$test_file
   done
 
-  # Restore env
-  export GLOBIGNORE=$globignore_save
+  # Sort keys
+  local -a a_key01=() a_key02=() a_key1=() a_key2=() a_key3=() a_key9=()
+  for key in "${!d_test_file[@]}"; do
+    [[ "$key" == unit_misc_equal ]] && { a_key01+=("$key"); continue; }
+    [[ "$key" == run_test ]] && { a_key02+=("$key"); continue; }
+    [[ "$key" == unit_dispatch* ]] && { a_key1+=("$key"); continue; }
+    [[ "$key" == unit_misc* ]] && { a_key2+=("$key"); continue; }
+    [[ "$key" == dispatch* ]] && { a_key3+=("$key"); continue; }
+    a_key9+=("$key")
+  done
+  a_key_sorted=("${a_key01[@]}" "${a_key02[@]}" "${a_key1[@]}" "${a_key2[@]}" "${a_key3[@]}" "${a_key9[@]}")
 
-  # Clause: test files must be present
-  # See: https://stackoverflow.com/a/34195247/2544873
-  compgen -G "$gs_root_path"/test/test_*sh &> /dev/null || {
-    perr "Check self: Cannot test self <= test files are not present" \
-         "Tip: try to run locally <= test files seems to not have been copied"
-    return "$E_REQ"
-  }
+  # Message what will be tested
+  pinfo "Will test files with key:" \
+    "${a_key_sorted[*]}"
 
   # Get 'dispatch' in path
   PATH="$gs_root_path:$PATH"
@@ -215,17 +246,6 @@ main(){
   # Safely set status if grep error,
   # for bash-4.2 that has trouble to get status
   (( res == 0 )) && [[ -n "$err_summary" ]] && res=1
-
-  # Sort keys
-  local -a a_key1=() a_key2=() a_key3=() a_key9=()
-  for key in "${!d_test_file[@]}"; do
-    [[ "$key" == unit_dispatch* ]] && { a_key1+=("$key"); continue; }
-    [[ "$key" == unit_misc* ]] && { a_key2+=("$key"); continue; }
-    [[ "$key" == dispatch* ]] && { a_key3+=("$key"); continue; }
-    a_key9+=("$key")
-  done
-  a_key_sorted=("${a_key1[@]}" "${a_key2[@]}" "${a_key3[@]}" "${a_key9[@]}")
-
 
   # Write file summary
   echo -e "\n\nFile Summary\n============================="

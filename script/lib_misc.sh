@@ -882,13 +882,12 @@ fcp(){
 }
 
 
-#  : 'Create a filedescriptor attached to no file
-#    Let the kernel manage it
-#    Called by: bash_sleep
-#    TODO test
-#  '
-# Cannot put in function as getting its output creates a subshell
-# Standalone
+: 'Create a filedescriptor attached to no file
+  Cannot put in function as getting its output creates a subshell
+  Let the kernel manage it
+  Standalone
+  Called by: bash_sleep
+'
 # shellcheck disable=SC2142,SC2139,SC2034  # Aliases can't use positional, unused
 # shellcheck disable=SC2154  # Last_arg referenced but not assigned false +
 alias get_dummy_fd_alias='
@@ -1095,15 +1094,22 @@ __phelper(){
 
 print_stack(){
   : 'Print current stack trace, tested
+    Arg1: First frame number
+    Arg2: Last frame number
     Depends on: join_by
     From: https://stackoverflow.com/a/2990533/254487
   '
   local -i i_init=${1:-0}  # Frame number where I'll start
   local -i i_end=${2:-10}  # Frame number where I'll stop
-  local -i i_indent=-4  # Indentation size
+  local -i i_indent=-2  # Indentation size, start at -2 as everything is in a function
   local -i i_lnum=5  # Number of lines for the first frame
   local -i b_first_loop=1  # Are we in first loop
   local -i j=0 k=0 i_frame=0
+
+  # Clean argument in
+  if (( i_end < 0 )); then
+    i_end=99
+  fi
 
   # Warn can see more
   shopt -q extdebug || echo "# Note: run 'shopt -s extdebug' to see call arguments"
@@ -1114,8 +1120,6 @@ print_stack(){
     (( i_frame > ${#BASH_LINENO[@]} )) && break
     (( i_frame > ${#FUNCNAME[@]} )) && break
     (( i_frame > i_end )) && break
-
-    ((i_indent+=2))
 
     # Get lines number of code to print
     local line_nr="${BASH_LINENO[$i_frame-1]}"
@@ -1159,6 +1163,9 @@ print_stack(){
       printf "%${i_indent}s" ""
       printf "        %b\n" "$msg"
     fi
+
+    # Prepare next loop
+    ((i_indent+=2))
   done
 }
 
@@ -1220,6 +1227,7 @@ equal(){
   local -i b_not=0  # Not boolean if condition reversed
   local -i b_quiet=0  # DO not print in case os success
   local -i i_depth=1  # Depth of the assert call, inited at 1 supposing the worker directly calls assert
+  local stack=''  # Stack trace in case of failure
   while (( 0 != $# )); do
     case $1 in
       --desc)
@@ -1272,7 +1280,7 @@ equal(){
   url+="${DISPATCH_SELF_COMMIT}/${file}#L${line_nr}"
 
   # Craft default line content
-  [[ -z "$brief" ]] && brief="from $(print_stack 2 2 | tr '\n' ' ')"
+  #[[ -z "$brief" ]] && brief="from $(print_stack 2 2 | tr '\n' ' ')"
   if ((b_is_verbose)); then
     local brief_start="$cbold$cunderline"
     local brief_end=$cend
@@ -1321,16 +1329,16 @@ equal(){
     stdout_line+="  -- Url: $url\n"
   fi
 
-  # Finally print to stderr
-  >&2 echo -en "$stdout_line\n"
-  
-  # And save it to print in the end
+  # Append error verbose
   if (( ! b_succeed )); then
     stdout_line+="  -- Namespace: $ART_NAMESPACE\n"
-    # TODO reduced stack => add argument
-    #stdout_line+="$(print_stack 2 2 | sed -e 's/^/  -- Stack:/')\n"
+    stack=$(print_stack 2)
+    stdout_line+="  -- Stacktrace:\n$stack"
     stdout_line+="\n\n"
+  fi
     
+  # And stdout line
+  if (( ! b_succeed )); then
     # Append to summary fd
     if [[ -v gi_summary_write_fd ]] && (( gi_summary_write_fd != 0)); then
       DISPATCH_EQUAL_ERR+="$stdout_line"
@@ -1339,6 +1347,8 @@ equal(){
     fi
   fi
   
+  # Finally print to stderr
+  >&2 echo -en "$stdout_line\n"
 
   # Write junit line if requested
   if [[ -v g_junit_file && -w "$g_junit_file" ]]; then

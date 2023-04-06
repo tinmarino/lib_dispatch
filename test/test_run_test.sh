@@ -10,7 +10,14 @@ if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
   source "$gs_root_path/test/lib_test.sh"
 fi
 
-#equal 0 1 "Should fail"
+
+test_run_test(){
+  "$gs_root_path"/test/run_test.sh fail
+
+}
+
+test_run_test "$@"
+
 
 >&2 echo -e "\n<= $0 returned: $g_dispatch_i_res, at $tmp_bank"
 exit "$g_dispatch_i_res"
