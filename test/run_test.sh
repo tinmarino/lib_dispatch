@@ -2,11 +2,12 @@
 
 # shellcheck disable=SC2059  # Don't use variables in the printf format string
 
-export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
-gs_root_path="$(dirname "$gs_root_path")"
-gs_root_path="$(dirname "$gs_root_path")"
-# shellcheck disable=SC1091  # Not following
-source "$gs_root_path/test/lib_test.sh"
+# Source test utilities
+if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
+  : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
+  # shellcheck disable=SC1091  # Not following
+  source "$gs_root_path/test/lib_test.sh"
+fi
 
 # Declate the report fd
 # g: global, i: integer, x: export
@@ -135,20 +136,20 @@ main(){
   # start a background pipeline with two processes running forever
   tail -f /dev/null | tail -f /dev/null &
   # save the process ids
-  local PID2=$!
-  local PID1=$(jobs -p %+)
+  local pid2=$!
+  local pid1=$(jobs -p %+)
   # hijack the pipe's file descriptors using procfs
   # l-wx------ 1 mtourneb mtourneb 64 ene  6 00:46 42 -> pipe:[4317132]
   # lr-x------ 1 mtourneb mtourneb 64 ene  6 00:46 43 -> pipe:[4317132]
   # Steal write fd
-  exec {gi_summary_write_fd}>/proc/"$PID1"/fd/1
+  exec {gi_summary_write_fd}>/proc/"$pid1"/fd/1
   # Steal read fd
-  exec {gi_summary_read_fd}</proc/"$PID2"/fd/0
+  exec {gi_summary_read_fd}</proc/"$pid2"/fd/0
   
   # kill the background processes we no longer need
   # (using disown suppresses the 'Terminated' message)
-  disown "$PID2"
-  kill "$PID1" "$PID2"
+  disown "$pid2"
+  kill "$pid1" "$pid2"
 
   # Say Hi
   local commit="$(git -C "$gs_root_path" log -n 1 --pretty=format:"%C(yellow)%h %ad%Cred%d %Creset%s%Cblue [%cn]" --decorate --date=short 2> /dev/null)"
@@ -248,18 +249,20 @@ main(){
   (( res == 0 )) && [[ -n "$err_summary" ]] && res=1
 
   # Write file summary
-  echo -e "\n\nFile Summary\n============================="
+  >&2 echo -e "\n\nFile Summary\n============================="
   local -a a_col=(30 7 3)
   local format1="| %-${a_col[0]}s | %-${a_col[1]}s | %-${a_col[2]}s |\n"
   # Each cell take 3, the last 1
   # 25 + 20 + 3 + 3 * 3 + 1 = 5
   local br=$(printf -- '-%.0s' {1..63}; echo)
-  echo "$br"
-  printf "$format1" "File" "Result" "Sts"
-  printf "$format1" \
+  >&2 echo "$br"
+  >&2 printf "$format1" "File" "Result" "Sts"
+  >&2 printf "$format1" \
     "$(printf -- '-%.0s' {1..30})" \
     "$(printf -- '-%.0s' {1..7})" \
     "$(printf -- '-%.0s' {1..3})"
+
+  # Print cell colored values
   for key in "${a_key_sorted[@]}"; do
     [[ async == "$key" ]] && continue
     local color='' tail=''
@@ -271,15 +274,14 @@ main(){
       color="$cred"
       tail="ERROR"
     fi
-  # 12345678901234567890
-  # E[38;5;124m
-  local -i color_len=$(( ${#color} + ${#cend} ))
+    # 12345678901234567890
+    # E[38;5;124m
+    local -i color_len=$(( ${#color} + ${#cend} ))
     local format2="| %-$((a_col[0] + color_len))s | %-$((a_col[1] + color_len))s | %-$((a_col[2] + color_len))s |\n"
-    printf "$format2" "$color$key$cend" "$color$tail$cend" "$color$status$cend"
+    >&2 printf "$format2" "$color$key$cend" "$color$tail$cend" "$color$status$cend"
   done
-  echo "$br"
+  >&2 echo "$br"
 
-  echo -e "\nGoodbye\n============================="
   # Calculate time spent
   if [[ osx != $(get_os) ]]; then
     local -i end_time=$(date +%s%N)
@@ -293,7 +295,7 @@ main(){
     local -i mili_time=000
   fi
 
-  # Craft message
+  # Craft goodbye message
   printf -v script_time '%dh:%dm:%ds.%dms' $((sec_time/3600)) $((sec_time%3600/60)) $((sec_time%60)) $((mili_time))
   local msg=""
   (( res == 0 )) \
@@ -302,6 +304,7 @@ main(){
   msg+="'Dispatch util unit_test $*' returned with $res status in $script_time$cend"
 
   # Say Bye
+  >&2 echo -e "\nGoodbye\n============================="
   >&2 echo -e "$msg"
 
   return "$res"

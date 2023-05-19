@@ -14,7 +14,6 @@ fi
 # Declare dependencies
 depend
 
-
 test_function_unit_misc_bash_timeout(){
   : 'Test function_unit_misc_bash_timeout'
   # Define helper function

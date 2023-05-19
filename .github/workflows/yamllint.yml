@@ -1,22 +1,21 @@
 ---
 
-name: Typos
+name: Yamllint
 
 # yamllint disable-line rule:truthy
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  Typos:
+  Yamllint:
     # Copied from: https://github.com/junegunn/fzf/blob/master/
     # -- .github/workflows/typos.yml
-    name: Typos
+    name: Yamllint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - uses: crate-ci/typos@v1.13.16
+      - uses: ibiqlik/action-yamllint@v3
         with:
-          files: .
-          config: .github/res/typos_config.toml
+          file_or_dir: >-
+            .github/workflows/*.yml

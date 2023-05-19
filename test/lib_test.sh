@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
-# shellcheck disable=SC1091  # Not following
+# Kcov helper <= Forking is removing the set -x set by kcov
+[[ -v KCOV_BASH_COMMAND ]] && set -x
+
 : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
+# shellcheck disable=SC1091  # Not following
 source "$gs_root_path/script/lib_misc.sh"
 
+# Silence shellcheck
 : "${cpurple:=}" "${cend:=}"
 
 start_test_function(){

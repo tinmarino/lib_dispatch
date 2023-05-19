@@ -1367,7 +1367,7 @@ equal(){
     if (( res )); then
       elt+="    <error message=\"Test $g_junit_function $gi_junit_n failed\">Failed test $g_junit_function $gi_junit_n"$'\n'
       # shellcheck disable=SC2030  # Modification of g_dispatch_b_complete
-      elt+="    Stacktrace: $(reset_color; export g_dispatch_b_complete=1; print_stack | remove_ansi_code)"$'\n'
+      elt+="    Stacktrace: $(reset_color; eval "export g_dispatch_b_complete=1"; print_stack | remove_ansi_code)"$'\n'
       elt+="    </error>"$'\n'
     fi
     elt+="    </testcase>"; elt+=$'\n'

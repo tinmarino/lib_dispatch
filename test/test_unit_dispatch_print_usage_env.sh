@@ -27,6 +27,7 @@ test_function_unit_dispatch_print_usage_env(){
     : 'Internal helper to set environment variables'
     set -a
     # Required
+    # shellcheck disable=SC2092  # Remove backticks to avoid executing output (or use eval if intentional)
     `#: "${GREPMEREQ:=default_req}"`
     : "${EXAMPLE:=default_example_value}"
     : echo otot

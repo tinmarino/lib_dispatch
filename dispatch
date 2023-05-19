@@ -17,12 +17,14 @@ declare -A g_dispatch_d_cmd=(
   [example]="$script_path/example.sh"
   [util]="$script_path/util.sh"
 )
-
+: "${g_dispatch_d_cmd[@]}"  # Silence shellcheck
 register_subcommand_from_gd_cmd
+
 
 __default(){
   print_usage_main --help
 }
+
 
 # If executed and not sourced, print self doc
 if [[ -v BASH_SOURCE ]] && (( ${#BASH_SOURCE[@]} > 0 )) && [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

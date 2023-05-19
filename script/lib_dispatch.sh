@@ -6,6 +6,9 @@
 ##########
 # Global
 
+  # Kcov helper <= Forking is removing the set -x set by kcov
+  [[ -v KCOV_BASH_COMMAND ]] && set -x
+
   # Capture epoch of sourcing
   declare -g g_dispatch_start_time  # Epoch of sourcing
   # shellcheck disable=SC2034  # g_dispatch_start_time appears unused
@@ -1128,7 +1131,6 @@ mm_at(){
   '
 
   # Clause must not work and consume 1 argument if completing
-  # shellcheck disable=SC2031  # false positive as I modify it in a subshell
   ((g_dispatch_b_complete)) && return 1
 
   # Parse In

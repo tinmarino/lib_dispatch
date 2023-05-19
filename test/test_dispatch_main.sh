@@ -2,13 +2,15 @@
 # Test dispatch main functionality (to dipatch on cmdline arguments)
 
 # Source test utilities
-  if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
-    export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
-    gs_root_path="$(dirname "$gs_root_path")"
-    gs_root_path="$(dirname "$gs_root_path")"
-    # shellcheck disable=SC1091  # Not following
-    source "$gs_root_path/test/lib_test.sh"
-  fi
+if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
+  : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
+  # shellcheck disable=SC1091  # Not following
+  source "$gs_root_path/test/lib_test.sh"
+fi
+
+# Silence shellcheck
+: "${g_dispatch_i_res:=0}"
+: "${cpurple:=}" "${cend:=}"
 
 
 go(){

@@ -1,0 +1,35 @@
+---
+# See the coverage of a bash sync test
+# yamllint disable rule:line-length
+
+name: Coverage
+
+# yamllint disable-line rule:truthy
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install packages
+        run: sudo apt-get install -y bash kcov
+
+      - name: Cover
+        run: |
+          opts=(
+            --include-path=dispatch,script
+            --exclude-line=": ',--,  \",done"
+          )
+          kcov  coverage1 "${opts[@]}" dispatch util unit_test
+          kcov --merge "${opts[@]}" coverage coverage1
+          rm -r coverage1
+
+      - name: Upload coverage (Codecov)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          bash <(curl -s https://codecov.io/bash) -s coverage

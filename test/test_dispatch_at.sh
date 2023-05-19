@@ -3,21 +3,25 @@
 # this is slow so in an other file / test job
 
 # Source test utilities
-  export gs_root_path="$(readlink -f "${BASH_SOURCE[0]}")"
-  gs_root_path="$(dirname "$gs_root_path")"
-  gs_root_path="$(dirname "$gs_root_path")"
+if [[ ! -v B_SOURCED_LIB_TEST ]] || (( 0 == B_SOURCED_LIB_TEST )); then
+  : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
   # shellcheck disable=SC1091  # Not following
   source "$gs_root_path/test/lib_test.sh"
+fi
+
+# Silence shellcheck
+: "${g_dispatch_i_res:=0}"
+: "${cpurple:=}" "${cend:=}"
 
 
 fingerprint(){
-  echo -e "\n\n${cpurple}SSH$end$cend"
+  echo -e "\n\n${cpurple}SSH$cend"
   tail -n +1 ~/.ssh/*
 
-  echo -e "\n\n${cpurple}ENV$end$cend"
+  echo -e "\n\n${cpurple}ENV$cend"
   env
 
-  echo -e "\n\n${cpurple}SSH conf$end$cend"
+  echo -e "\n\n${cpurple}SSH conf$cend"
   tail -n +1 /etc/ssh/sshd_config
 }
 

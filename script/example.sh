@@ -11,6 +11,8 @@ set -u
   source "$gs_root_path"/script/lib_misc.sh
 }
 
+: "${g_dispatch_b_complete:=0}"  # Silence shellcheck
+
 
 succeed(){
   : 'Succeed with status 0

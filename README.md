@@ -1,5 +1,13 @@
 # Lib dispatch
 
+[![license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![100% shell](https://img.shields.io/github/languages/top/tinmarino/lib_dispatch.svg?style=flat-square)](https://github.com/shellspec/shellspec/search?l=Shell)
+[![Unit](https://github.com/tinmarino/lib_dispatch/workflows/Unit/badge.svg)](https://github.com/tinmarino/lib_dispatch/actions/workflows/unit.yml)
+[![Typos](https://github.com/tinmarino/lib_dispatch/workflows/Typos/badge.svg)](https://github.com/tinmarino/lib_dispatch/actions/workflows/typos.yml)
+[![Shellcheck](https://github.com/tinmarino/lib_dispatch/workflows/Shellcheck/badge.svg)](https://github.com/tinmarino/lib_dispatch/actions/workflows/shellcheck.yml)
+[![Yamllint](https://github.com/tinmarino/lib_dispatch/workflows/Yamllint/badge.svg)](https://github.com/tinmarino/lib_dispatch/actions/workflows/yamllint.yml)
+[![Codecov](https://codecov.io/github/tinmarino/lib_dispatch/branch/ci/graph/badge.svg?token=TUQU7E6KT7)](https://app.codecov.io/gh/tinmarino/lib_dispatch/blob/ci/lib_dispatch.sh)
+
 A bash library to call function according to user input.
 
 To build command line interface even better than git.
