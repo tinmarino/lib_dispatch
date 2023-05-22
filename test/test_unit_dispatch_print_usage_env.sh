@@ -38,6 +38,14 @@ test_function_unit_dispatch_print_usage_env(){
   out=$(print_usage_env 2>&1); equal 0 $? 'print_usage_env function always succeed (2)'
   [[ "$out" =~ EXAMPLE.*default_example_value ]]; equal 0 $? 'print_usage_env contains default env'
   [[ "$out" =~ GREPMEREQ.*default_req.*Required ]]; equal 0 $? 'print_usage_env contains required env parameter'
+
+
+  # --3: Without awk command which is required
+  out=$(
+    command -v awk &> /dev/null && hash -d awk &> /dev/null
+    PATH='' print_usage_env 2>&1
+  ); equal --not 0 $? "print_usage_env function should fail if there is no awk command"
+  [[ "$out" =~ Error ]]; equal 0 $? "print_usage_env function should print E.r.r.o.r if awk command is not available"
 }
 
 

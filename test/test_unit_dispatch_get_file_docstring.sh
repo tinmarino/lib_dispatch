@@ -46,6 +46,13 @@ test_function_unit_dispatch_get_file_docstring(){
   ') long)
   equal 0 $? 'get_file_docstring success (4)'
   equal $'Grepme  first  line\nGrepme  second  line\n\nGrepme last line' "$out" "get_file_docstring output short"
+
+  # --3: Without awk command which is required
+  out=$(
+    command -v awk &> /dev/null && hash -d awk &> /dev/null
+    PATH='' get_file_docstring 2>&1
+  ); equal --not 0 $? "print_usage_env function should fail if there is no awk command"
+  [[ "$out" =~ Error ]]; equal 0 $? "print_usage_env function should print E.r.r.o.r if awk command is not available"
 }
 
 

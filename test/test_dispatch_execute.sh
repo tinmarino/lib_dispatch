@@ -20,8 +20,8 @@ fi
   fcp is_in_array save_is_in_array
   unset is_in_array 2> /dev/null
 
-start_test_function "Dispatch: Source code to test"
 
+start_test_function "Dispatch: Source code to test"
   out=$("$gs_root_path/script/lib_dispatch.sh")
   equal 0 $? "Executing lib_dispatch should return 0"
   readarray -t a_key < <(echo "$out" | grep --color=never -oE $'^(\e[^m]*m)?[-0-9A-Za-z_]+' | sed $'s/^\e[^m]*m//')

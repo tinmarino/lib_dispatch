@@ -131,8 +131,8 @@
 
 dispatch(){
   : '101/ Call the function with the name of the argument, tested
-    Depends on: fill_fct_dic, call_fct_arg  # Actually just calls those 2
-    Return: the called function return value
+    -- Depends on: fill_fct_dic, call_fct_arg  # Actually just calls those 2
+    -- Return: the called function return value
   '
 
   # Clause: do not work if caller script have been sourced (this kicks out debugger)
@@ -146,16 +146,16 @@ dispatch(){
 
 register_subcommand_from_gd_cmd(){
   : '102/ Register subcommands and their docstring, tested
-    Depends on: get_file_docstring
-    Global: g_dispatch_d_fct (out)
-    Global: g_dispatch_d_cmd (in)
-    Standalone
-    From: https://stackoverflow.com/a/20018504/2544873
-    # The sync version
-    for cmd in "${!g_dispatch_d_cmd[@]}"; do
-      local file=${g_dispatch_d_cmd[$cmd]}
-      g_dispatch_d_fct[$cmd]=$(get_file_docstring "$file" long)
-    done
+    -- Depends on: get_file_docstring
+    -- Global: g_dispatch_d_fct (out)
+    -- Global: g_dispatch_d_cmd (in)
+    -- Standalone
+    -- From: https://stackoverflow.com/a/20018504/2544873
+    -- # The sync version
+    -- for cmd in "${!g_dispatch_d_cmd[@]}"; do
+    --  local file=${g_dispatch_d_cmd[$cmd]}
+    --  g_dispatch_d_fct[$cmd]=$(get_file_docstring "$file" long)
+    -- done
   '
   local -A d_fd=()
   local -i i_fd=0
@@ -185,10 +185,10 @@ register_subcommand_from_gd_cmd(){
 fill_fct_dic(){
   : 'Internal: Fill g_dispatch_d_fct the Global Dictionary of defined functions, tested
     -- coded with asyncronic pipe redirection (fork-join)
-    Depends on: subtract_array get_fct_docstring
-    Global: g_dispatch_d_fct (out) dict<functions,docstring> where functions are the ones declared in calling script
-    Global: g_dispatch_d_fct_default (in) dict<functions,docstring> where default functions are defined
-    Global: g_dispatch_a_fct_to_hide (in) array<functions> where function already defined in parent shell must be hideen
+    -- Depends on: subtract_array get_fct_docstring
+    -- Global: g_dispatch_d_fct (out) dict<functions,docstring> where functions are the ones declared in calling script
+    -- Global: g_dispatch_d_fct_default (in) dict<functions,docstring> where default functions are defined
+    -- Global: g_dispatch_a_fct_to_hide (in) array<functions> where function already defined in parent shell must be hideen
   '
   local -a a_fct_all="($(declare -F -p | cut -d " " -f 3))"
   local -a a_fct_see=()
@@ -277,8 +277,8 @@ call_fct_arg(){
   # Clause: if --at, send the payload at
   # TODO test me and refactor me
   if is_in_array --at "${args[@]}" && ! { ((g_dispatch_b_complete)) || ((g_dispatch_b_help)) || ((g_dispatch_b_doc)); }; then
-    local a_new_arg=()
-    local a_new_opt=()
+    local -a a_new_arg=()
+    local -a a_new_opt=()
     local target_host=''
     while (( 0 != $# )); do
       case "$1" in
@@ -500,8 +500,8 @@ call_fct_arg(){
 
 print_usage_main(){
   : 'Print Usage Tail: Fct, Option, Env, TODO test with example
-    Depends on: print_usage_fct, print_usage_env, print_title
-    Arg1: format: --complete --help --doc --html
+    -- Depends on: print_usage_fct, print_usage_env, print_title
+    -- Arg1: format: --complete --help --doc --html
   '
   local format="${1:---help}"
   local -a a_fct_unsorted=() a_fct_num_yes=() a_fct_num_no=()
@@ -541,7 +541,7 @@ print_usage_main(){
     return 0
   fi
 
-  # Clause: user feined usage ?
+  # Clause: user defined usage ?
   if declare -F __usage > /dev/null; then
     __usage "$@"
   fi
@@ -588,12 +588,12 @@ print_usage_main(){
 
 print_usage_fct(){
   : 'Print function description, tested
-    Big formatting bazar
-    Depends on: colorize_docstring
-    Arg1: format <string>: complete, help, doc
-    Arg2: type <string>: option, function, all
-    Global: g_dispatch_d_fct (in:dict) containing functions (key) and their docstring (value)
-    Depends on: perr is_in_array colorize_docstring
+    -- Big formatting bazar
+    -- Depends on: colorize_docstring
+    -- Arg1: format <string>: complete, help, doc
+    -- Arg2: type <string>: option, function, all
+    -- Global: g_dispatch_d_fct (in:dict) containing functions (key) and their docstring (value)
+    -- Depends on: perr is_in_array colorize_docstring
   '
   local format="${1:---help}"
   local type="${2:-function}"
@@ -696,11 +696,11 @@ print_usage_fct(){
 print_usage_env(){
   : 'Print Environment variables used, TODO test
     -- That is why they must be set in __set_env
-    Arg3: indent
-    Arg4: value: can be default, current to print default or current value (default: default)
-    Global: __set_env function <in>
-    Depends on: perr
-    Requires: awk
+    -- Arg3: indent
+    -- Arg4: value: can be default, current to print default or current value (default: default)
+    -- Global: __set_env function <in>
+    -- Depends on: perr
+    -- Requires: awk
   '
   local i_indent="${3:-0}"
   local value="${4:-default}"
@@ -718,27 +718,27 @@ print_usage_env(){
   declare -f __set_env \
     | awk -v cpurple="\\$cpurple" -v cend="\\$cend" \
       -v indent="$indent" -v value="$value" '
-      BEGIN { FS=":=" }
-      /: "\$/ {
+      BEGIN { FS=":=" }  # --
+      /: "\$/ {  # --
         # Required trick
-        num = gsub("^ *`#", "", $0);
+        num = gsub("^ *`#", "", $0);  # --
 
         # Remove lead and trail
-        gsub("^ *: *\"\\$\\{|\\}\" *`?; *$", "", $0);
+        gsub("^ *: *\"\\$\\{|\\}\" *`?; *$", "", $0);  # --
 
         # Was it required?
-        if (num > 0) gsub("$", "  [Required]", $0);
+        if (num > 0) gsub("$", "  [Required]", $0);  # --
 
         # Padding
-        slen = 20-length($1); if(slen < 2) slen=2;
-        pad = sprintf("%-*s", slen , " ");
-        gsub(/ /, "-", pad);
+        slen = 20-length($1); if(slen < 2) slen=2;  # --
+        pad = sprintf("%-*s", slen , " ");  # --
+        gsub(/ /, "-", pad);  # --
 
         # Over
-        if (value == "current") {
-          printf("%s%s%s%s  %s  %s\n", indent, cpurple, $1, cend, pad, ENVIRON[$1]);
-        } else {
-          printf("%s%s%s%s  %s  %s\n", indent, cpurple, $1, cend, pad, $2);
+        if (value == "current") {  # --
+          printf("%s%s%s%s  %s  %s\n", indent, cpurple, $1, cend, pad, ENVIRON[$1]);  # --
+        } else {  # --
+          printf("%s%s%s%s  %s  %s\n", indent, cpurple, $1, cend, pad, $2);  # --
         }
       }
     '
@@ -746,8 +746,8 @@ print_usage_env(){
 
 print_complete_main(){
   : 'Main Print for completion, TODO test
-    First completion call, calls the rest
-    From: https://stackoverflow.com/questions/7267185
+    -- First completion call, calls the rest
+    -- From: https://stackoverflow.com/questions/7267185
   '
 
   set --  # For shellcheck
@@ -806,10 +806,10 @@ print_complete_main(){
 
 get_file_docstring(){
   : 'Read first lines of script to retrieve it header, tested
-    Arg1: <string> filename
-    Arg2: <string> format: long or short (default)
-    Depends on: perr is_in_array colorize_docstring
-    Requires: awk
+    -- Arg1: <string> filename
+    -- Arg2: <string> format: long or short (default)
+    -- Depends on: perr is_in_array colorize_docstring
+    -- Requires: awk
   '
   local filename="$1"
   local format="${2:-short}"
@@ -830,7 +830,7 @@ get_file_docstring(){
 
   # Check in: black list bash
   if is_in_array "$filename" /bin/bash /usr/bin/bash "$(which bash)" "$SHELL"; then
-    printf "%s" "Sourced file cannot be introspeted => no doc header, sorry."
+    printf "%s" "Sourced file cannot be introspected => no doc header, sorry."
     return 0
   fi
 

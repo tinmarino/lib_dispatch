@@ -75,6 +75,10 @@ test_function_main_help(){
   # Doc
   out=$(command dispatch --doc); equal 0 $? 'command dispatch -doc status'
 
+  # Help -h
+  out3=$(command dispatch -h)
+  [[ "$out1" == "$out3" ]]; equal 0 $? "command dispatch -h should return same as command dispatch (hidden as large)"
+
   # Help
   out2=$(command dispatch --help)
   [[ "$out1" == "$out2" ]]; equal 0 $? "--help: 'command dispatch' and 'command dispatch --help' same output (hidden as large)"
@@ -106,6 +110,10 @@ test_function_example_help(){
   is_in_array succeed "${a_example_help_key[@]}"; equal 0 $? "command dispatch example --help with succeed"
   is_in_array --value "${a_example_help_key[@]}"; equal 0 $? "command dispatch example --help with --value"
   is_in_array fail "${a_example_help_key[@]}"; equal 0 $? "command dispatch example --help with fail"
+
+  # Without argument
+  out2=$(command dispatch example); equal 0 $? 'command dispatch example --help status OK'
+  [[ "$out2" == "$out" ]]; equal 0 $? 'command dispatch example must print the user defined usage, same as --help'
 
   return "$g_dispatch_i_res"
 }

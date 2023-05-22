@@ -1188,26 +1188,26 @@ declare -gi g_dispatch_i_res=0  # Global response for the equal
 equal(){
   : 'Check 2 first parameters for string equality and report, tested
     -- if no argument is given, it will return 0
-    Depends on: print_stack
+    -- Depends on: print_stack
 
-    Global:
-      g_dispatch_i_res <out> also set for easier follow up
-      g_junit_file <in /opt> the path of the file to write report line
-      g_junit_function <in /opt> name of the function tested
-      g_junit_suite <in /opt> name of the suite tested TO Implement
-      gi_junit_n <in /opt> Number of test
+    -- Global:
+    --   g_dispatch_i_res <out> also set for easier follow up
+    --   g_junit_file <in /opt> the path of the file to write report line
+    --   g_junit_function <in /opt> name of the function tested
+    --   g_junit_suite <in /opt> name of the suite tested TO Implement
+    --   gi_junit_n <in /opt> Number of test
 
-    Arguments:
-      1 => reference <string> expected
-      2 => obtained <string> to test against the expected
-      3 => brief commentary <string, optional>
-      --desc  => long description
-      --tip   => tip to fix if test fails
-      --not   => reverse the condition (no argument)
-      --quiet => only print if fails (no argument)
-      --fix   => message only printed if failed
+    -- Arguments:
+    --   1 => reference <string> expected
+    --   2 => obtained <string> to test against the expected
+    --   3 => brief commentary <string, optional>
+    --   --desc  => long description
+    --   --tip   => tip to fix if test fails
+    --   --not   => reverse the condition (no argument)
+    --   --quiet => only print if fails (no argument)
+    --   --fix   => message only printed if failed
 
-    Return: 0 if OK.
+    -- Return: 0 if OK.
   '
   local -i res=0
   # Take less than 0.1ms, date takes 5ms
