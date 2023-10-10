@@ -2,6 +2,6 @@
   "name": "lib_dispatch",
   "version": "0.0.1",
   "description": "Dispatcher utility for Bash coding",
-  "scripts": [ "script/lib_dispatch.sh" ],
-  "install": "./dispatch"
+  "scripts": [ "lib_dispatch.sh" ],
+  "install": "install -b lib_dispatch.sh ${PREFIX:-$HOME/.local}/bin/lib_dispatch.sh"
 }
