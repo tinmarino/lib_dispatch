@@ -12,6 +12,13 @@ A bash library to call function according to user input.
 
 To build command line interface even better than git.
 
+# Install
+
+```bash
+curl -Lo- "https://raw.githubusercontent.com/tinmarino/lib_dispatch/main/setup.sh" | bash  # Installs to ~/.local/bin
+```
+
+
 # Quickstart
 
 Write file test.sh
