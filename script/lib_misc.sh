@@ -17,11 +17,10 @@ declare -g VERSION_DISPATCH=0.1.0
 : "${cfend:=''}" "${cend:=''}" "${cbold:=''}" "${cunderline:=''}" "${cred:=''}" "${cgreen:=''}" "${cyellow:=''}" "${cblue:=''}" "${cpurple:=''}" "${g_dispatch_a_dispach_args:=}" "${g_dispatch_project_name:=Misc}"
 
 
-: "${g_dispatch_b_complete:=0}"
 
-
-# Globals
-  declare -gi g_dispatch_b_run=1  # Do run command in run
+# Globals used
+  : "${g_dispatch_b_complete:=0}"
+  : "${g_dispatch_b_run:=1}"  # Do run command in run and not dry
   # --silent) g_dispatch_b_print=0;;
   # s) g_dispatch_b_print=0;;
   declare -gi g_dispatch_b_print=1  # Do print command before run in run
@@ -360,10 +359,12 @@ remove_newline(){
 
 columnize(){
   : 'Pipe util Format inteligently columns but with more user input than columns command, tested
+
     Depends on: perr get_opt
     Requires: awk
     Arg --col: coma separated list of column size len except the last column. Defaults to 20,30,30,30...
-    Arg --ofs --ifs --fs: Output, Input, and generic Field Separator. The generic sets OFS and IFS. These defined how cells are split or join
+    Arg --fs, --ofs, --ifs: Output, Input, and generic Field Separator. The generic sets OFS and IFS. These defined how cells are split or join
+
   '
   # Get in: Field separators
   local fs=$(get_opt --fs "$@")
@@ -384,7 +385,7 @@ columnize(){
   fi
 
   # Ok Go
-  awk -F "$ifs" -v col="$col" -v ofs="$ofs" '
+  awk -F "$ifs" -v ifs="$ifs" -v col="$col" -v ofs="$ofs" '
     function max(num1, num2){
        if (num1 > num2) {
          return num1
@@ -424,6 +425,11 @@ columnize(){
     # -- In cell spaces
     gsub(/[[:blank:]]*\|[[:blank:]]*/, "|", $0);
 
+    # Remove side ifs
+    # -- Hack for | ifs
+    gsub(/^\|/, "", $0);
+    #print "AWK:" $0
+
 
     # Calculate cumulated
     for (i=1; i<=i_col; i++) {
@@ -436,7 +442,8 @@ columnize(){
       a_len[i] = length($i);
     }
 
-    # Calculate breakstop: max(desired, real) => the distance from start to this real breakstop
+    # Calculate breakstop like:
+    # -- bs = max(desired, real) => the distance from start to this real breakstop
     for (i=1; i<=i_col; i++) {
       if (i == 1) {
         a_breakstop[i] = max(a_cumulated[i], a_len[i])
@@ -446,7 +453,7 @@ columnize(){
     }
 
     # Calculate diff => the size of this cell
-    format = ""
+    format = "| "
     for (i=1; i<=i_col; i++) {
       if (i == 1) {
         a_len[i] = a_breakstop[i]
@@ -463,7 +470,8 @@ columnize(){
       printf format, $i
       format = ""
     }
-    }
+
+    }  # End of line loop
   '
 }
 

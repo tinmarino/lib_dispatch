@@ -13,7 +13,7 @@
   declare -g g_dispatch_start_time  # Epoch of sourcing
   # shellcheck disable=SC2034  # g_dispatch_start_time appears unused
   printf -v g_dispatch_start_time '%(%s)T' -1  # Faster than date command
-  : "${gs_root_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
+  : "${gs_libdispatch_path:=$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")}"
 
   export DISPATCH_EQUAL_ERR=''
   export DISPATCH_SELF_COMMIT=''
@@ -31,20 +31,21 @@
   declare -gi g_dispatch_b_help=0  # Is asking for help
   declare -gi g_dispatch_b_doc=0  # Is asking for doc
   declare -gi g_dispatch_b_complete=0  # Is completing (or asking for complete):  0: no, 1: yes, 2: yes but already done
+  declare -gi g_dispatch_b_run=1  # Do run command in run (not dry)
   [[ -v COMP_TYPE ]] && [[ -n "$COMP_TYPE" ]] && [[ "$COMP_TYPE" != "0" ]] && g_dispatch_b_complete=1
 
 
   declare -gA g_dispatch_d_fct_default=(  # Default functions defined by hardcode
     [mm_silent]="🤫 Do not print executed commands (-s) [available for subcmd]"
-    #[mm_dry_run]="🖨️ Only print command instead of executing (-d) [available for subcmd]"
+    [mm_dry_run]="🖨️ Only print command instead of executing (-d) [available for subcmd]"
     [mm_complete]="❓Print lines with 'subcommand : comment' [available for subcmd]"
     [mm_help]="❓Print this message (-h) [available for subcmd]"
     [mm_doc]="❓Print this message [available for subcmd]"
   )
   declare -gA g_dispatch_d_fct=()  # Fct dictionary: the tail to call (no dispatch)
   declare -gA g_dispatch_d_cmd=()  # Subcommand dictionary (these subcommand mus tcall dispatch)
-  declare -ga g_dispatch_a_fct_to_hide=()  # Array of already defined function to hide (Filled by lib_dispatch)
   declare -ga g_dispatch_a_dispach_args=()  # Array of arguments given by the first user command
+  declare -ga g_dispatch_a_fct_to_hide=()  # Array of already defined function to hide (Filled by lib_dispatch)
   readarray -t g_dispatch_a_fct_to_hide < <(declare -F -p | cut -d " " -f 3)
 
   # Error values
@@ -230,7 +231,7 @@ call_fct_arg(){
   local subcmd_file=''  # Name of the file set if clling subcommand
 
   # Log helper for completion
-  log "Dispatch:$#|$*! (complete=$g_dispatch_b_complete, help=$g_dispatch_b_help, first=$gi_first_dispatch)"
+  # log "Dispatch:$#|$*! (complete=$g_dispatch_b_complete, help=$g_dispatch_b_help, first=$gi_first_dispatch)"
   #log "$(print_stack)"
 
   # Here I start, pre-parse
@@ -250,6 +251,7 @@ call_fct_arg(){
     # -- From: https://stackoverflow.com/a/61551944/2544873
     for arg in "${args[@]+"${args[@]}"}"; do
       case "$arg" in
+        --dry|--dry-run|--dry_run) g_dispatch_b_run=0;;
         --complete) g_dispatch_b_complete=1;;
         --help) g_dispatch_b_help=1;;
         --doc) g_dispatch_b_doc=1;;
@@ -1104,7 +1106,8 @@ perr(){
 
 log(){
   : 'Helper for debug (completion): Log to /tmp/irm_jenkins_log.log'
-  echo "$@" >> /tmp/lib_dispatch.log
+  : "${TMP_DIR:=$(dirname "$(mkdtmp)")}"
+  echo "$@" >> "$TMP_DIR/lib_dispatch.log"
 }
 
 
@@ -1223,8 +1226,8 @@ mm_at(){
     # Source libraries (in current shell)
     echo "export IRM_JENKINS_SSH_SUBCOMMAND='$subcmd'"
     echo "export g_dispatch_project_name='$g_dispatch_project_name'"
-    cat "$gs_root_path/script/lib_dispatch.sh" \
-        "$gs_root_path/script/lib_misc.sh" \
+    cat "$gs_libdispatch_path/script/lib_dispatch.sh" \
+        "$gs_libdispatch_path/script/lib_misc.sh" \
         "$subcmd_file"
   ) "$tmp_file"
 
