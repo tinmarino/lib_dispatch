@@ -522,19 +522,19 @@ print_usage_main(){
   )
 
   # Grep function with number in their comment or no
-  local re='^\S+ +\d+\/'
+  local re='^\S+ +[0-9]+/'
   readarray -t a_fct_num_yes < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep    "$re" | sort -nk2 -k1 | cut -d' ' -f1)
-  readarray -t a_fct_num_no < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep -v "$re" | sort -k1      | cut -d' ' -f1)
+  readarray -t a_fct_num_no  < <(printf '%s\n' "${a_fct_unsorted[@]}" | grep -v "$re" | sort -k1      | cut -d' ' -f1)
 
   # Sort function name inteligently: argument last and if number in comment, respect order
   local is_mm="^mm_"
   readarray -t ga_fct_sorted < <(
     # Without mm_ => normal function
     (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep -v "$is_mm"
-    (( ${#a_fct_num_no[@]} )) && printf '%s\n' "${a_fct_num_no[@]}" | grep -v "$is_mm"
+    (( ${#a_fct_num_no[@]} ))  && printf '%s\n' "${a_fct_num_no[@]}"  | grep -v "$is_mm"
     # With mm_ => print arguments at end
     (( ${#a_fct_num_yes[@]} )) && printf '%s\n' "${a_fct_num_yes[@]}" | grep "$is_mm"
-    (( ${#a_fct_num_no[@]} )) && printf '%s\n' "${a_fct_num_no[@]}" | grep "$is_mm"
+    (( ${#a_fct_num_no[@]} ))  && printf '%s\n' "${a_fct_num_no[@]}"  | grep "$is_mm"
   )
 
   # Clause: leave early if completing
